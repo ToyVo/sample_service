@@ -1,0 +1,40 @@
+@host=https://localhost:8080
+@app=sample-service
+@revision=0.1.0
+@profile=dev
+
+###
+# get sample
+GET {{host}}/samples
+
+###
+# get samples
+GET {{host}}/samples/12345
+
+###
+# update sample
+PATCH {{host}}/samples/12345
+Content-Type: application/json
+{
+    "description": "sample description udpated",
+    "image_uri": "https://example.com/example.png",
+    "name": "sample updated",
+    "status": "ACTIVE",
+    "tags": ["sample"]
+}
+
+###
+# delete sample
+DELETE {{host}}/samples/12345
+
+###
+# create sample
+POST {{host}}/samples
+Content-Type: application/json
+{
+    "description": "sample description",
+    "image_uri": "https://example.com/example.png",
+    "name": "sample",
+    "status": "INACTIVE",
+    "tags": ["sample"]
+}

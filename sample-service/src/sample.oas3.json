@@ -1,0 +1,347 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Samples",
+    "version": "1.0.0",
+    "description": "Example service definition to demonstrate the features of OpenAPI"
+  },
+  "paths": {
+    "/samples": {
+      "get": {
+        "operationId": "getSamples",
+        "description": "Gets samples method",
+        "tags": ["sample"],
+        "parameters": [
+          { "$ref": "#/components/parameters/offset" },
+          { "$ref": "#/components/parameters/limit" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/samples" }
+        }
+      },
+      "post": {
+        "operationId": "createSample",
+        "description": "Creates a sample",
+        "tags": ["sample"],
+        "requestBody": {
+          "description": "The new sample",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/newSample"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "$ref": "#/components/responses/sample" }
+        }
+      }
+    },
+    "/samples/{sampleId}": {
+      "parameters": [
+        {
+          "name": "sampleId",
+          "description": "A sample ID",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 36
+          }
+        }
+      ],
+      "get": {
+        "operationId": "getSample",
+        "description": "Gets a sample",
+        "tags": ["sample"],
+        "responses": {
+          "200": { "$ref": "#/components/responses/sample" }
+        }
+      },
+      "patch": {
+        "operationId": "updateSample",
+        "description": "Updates a sample",
+        "tags": ["sample"],
+        "requestBody": {
+          "description": "The sample update",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/sampleUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/sample" }
+        }
+      },
+      "delete": {
+        "operationId": "removeSample",
+        "description": "Removes a sample",
+        "tags": ["sample"],
+        "responses": {
+          "200": { "$ref": "#/components/responses/sample" }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "offset": {
+        "name": "offset",
+        "description": "The number of items to skip before returning the first item",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0
+        }
+      },
+      "limit": {
+        "name": "limit",
+        "description": "The maximum number of items to return",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000,
+          "default": 100
+        }
+      }
+    },
+    "responses": {
+      "sample": {
+        "description": "success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "description": "A response that contains a single sample",
+              "required": ["errors"],
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/sample"
+                },
+                "errors": {
+                  "type": "array",
+                  "description": "Any errors produced during method execution",
+                  "items": {
+                    "$ref": "#/components/schemas/error"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "samples": {
+        "description": "success",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "description": "A response that contains a single sample",
+              "required": ["data", "errors"],
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "description": "Any errors produced during method execution",
+                  "items": {
+                    "$ref": "#/components/schemas/sample"
+                  }
+                },
+                "errors": {
+                  "type": "array",
+                  "description": "Any errors produced during method execution",
+                  "items": {
+                    "$ref": "#/components/schemas/error"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "errorCode": {
+        "description": "An application-specific error code, expressed as a string value",
+        "type": "string",
+        "enum": [
+          "BAD_PARAMETER",
+          "BAD_REQUEST",
+          "FORBIDDEN",
+          "INTERNAL_SERVER_ERROR",
+          "INVALID_RESPONSE",
+          "METHOD_NOT_ALLOWED",
+          "NOT_FOUND",
+          "UNAUTHORIZED"
+        ]
+      },
+      "error": {
+        "type": "object",
+        "description": "A standard error",
+        "required": ["id", "code", "status", "title"],
+        "properties": {
+          "id": {
+            "description": "A unique identifier for this particular occurrence of the problem.",
+            "type": "string"
+          },
+          "code": { "$ref": "#/components/schemas/errorCode" },
+          "status": {
+            "description": "The HTTP status code applicable to this problem.",
+            "type": "integer"
+          },
+          "title": {
+            "description": "A short, human-readable summary of the problem that SHOULD NOT change from occurrence to occurrence of the problem, except for purposes of localization.",
+            "type": "string"
+          },
+          "detail": {
+            "description": "a human-readable explanation specific to this occurrence of the problem. Like `title`, this field’s value can be localized.",
+            "type": "string"
+          },
+          "source": {
+            "type": "object",
+            "description": "An object containing references to the source of the error",
+            "properties": {
+              "pointer": {
+                "description": "A JSON Pointer (RFC6901) to the associated entity in the request document (e.g. `/data` for a primary data object, or `/data/attributes/title` for a specific attribute).",
+                "type": "string"
+              },
+              "parameter": {
+                "description": "A string indicating which method parameter caused the error.",
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "status": {
+        "type": "string",
+        "enum": ["ACTIVE", "INACTIVE", "ARCHIVED"],
+        "description": "Current state of a sample"
+      },
+      "sample": {
+        "type": "object",
+        "description": "A sample entity representing a generic resource",
+        "required": ["id", "name", "status", "createdAt"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique, non-sequential identifier for this sample"
+          },
+          "name": {
+            "type": "string",
+            "description": "Descriptive name for the sample",
+            "maxLength": 100
+          },
+          "description": {
+            "type": "string",
+            "description": "A longer description of the sample",
+            "maxLength": 2000
+          },
+          "status": { "$ref": "#/components/schemas/status" },
+          "tags": {
+            "type": "array",
+            "maxItems": 25,
+            "items": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "description": "Tags associated with the sample"
+          },
+          "tagsCondensed": {
+            "type": "string",
+            "description": "A regional comma separated string of the tags",
+            "maxLength": 2500
+          },
+          "imageUri": {
+            "type": "string",
+            "description": "Absolute URI to an image representing the sample",
+            "maxLength": 500
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the sample was created"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the sample was last updated"
+          }
+        }
+      },
+      "sampleUpdate": {
+        "type": "object",
+        "description": "A sample entity representing a generic resource",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Descriptive name for the sample",
+            "maxLength": 100
+          },
+          "description": {
+            "type": "string",
+            "description": "A longer description of the sample",
+            "maxLength": 2000
+          },
+          "status": { "$ref": "#/components/schemas/status" },
+          "tags": {
+            "type": "array",
+            "maxItems": 25,
+            "items": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "description": "Tags associated with the sample"
+          },
+          "imageUri": {
+            "type": "string",
+            "description": "Absolute URI to an image representing the sample",
+            "maxLength": 500
+          }
+        }
+      },
+      "newSample": {
+        "type": "object",
+        "description": "A sample entity representing a generic resource",
+        "required": ["name", "status"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Descriptive name for the sample",
+            "maxLength": 100
+          },
+          "description": {
+            "type": "string",
+            "description": "A longer description of the sample",
+            "maxLength": 2000
+          },
+          "status": { "$ref": "#/components/schemas/status" },
+          "tags": {
+            "type": "array",
+            "maxItems": 25,
+            "items": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "description": "Tags associated with the sample"
+          },
+          "imageUri": {
+            "type": "string",
+            "description": "Absolute URI to an image representing the sample",
+            "maxLength": 500
+          }
+        }
+      }
+    }
+  }
+}

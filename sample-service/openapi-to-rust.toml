@@ -1,0 +1,36 @@
+# Created by openapi-to-rust init.
+
+[client]
+operations = [
+  "tag:sample"
+]
+prune_models = true
+
+[features]
+enable_async_client = true
+
+[generator]
+module_name = "sample_oas3"
+output_dir = "src/generated"
+spec_path = "src/sample.oas3.json"
+
+[http_client]
+base_url = "https://sample.toyvo.dev"
+timeout_seconds = 30
+
+[http_client.auth]
+header_name = "Authorization"
+type = "Bearer"
+
+[http_client.retry]
+max_retries = 3
+
+[http_client.tracing]
+enabled = false
+
+[server]
+framework = "axum"
+operations = [
+  "tag:sample"
+]
+prune_models = true

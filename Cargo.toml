@@ -1,0 +1,61 @@
+[profile.android-dev]
+inherits = "dev"
+
+[profile.server-dev]
+inherits = "dev"
+
+[profile.wasm-dev]
+inherits = "dev"
+opt-level = 1
+
+[workspace]
+members = ["sample-service"]
+resolver = "2"
+
+[workspace.dependencies]
+anyhow = "1"
+async-trait = "0.1"
+axum = "0.8"
+chrono = "0.4"
+clap = "4.6"
+color-eyre = "0.6"
+criterion = "0.8"
+diesel = "2.2"
+dioxus = "0.7"
+dioxus-primitives = {git = "https://github.com/DioxusLabs/components", version = "0.0.1"}
+http-body-util = "0.1"
+itertools = "0.15"
+jiff = "0.2"
+jsonschema = "0.49"
+mime = "0.3"
+rayon = "1.12"
+reqwest = "0.13"
+reqwest-middleware = "0.5"
+reqwest-retry = "0.9"
+secretspec = "0.20"
+secretspec-derive = "0.20"
+serde = "1"
+serde_json = "1"
+serde_urlencoded = "0.7"
+thiserror = "2"
+tokio = "1"
+tracing-subscriber = "0.3"
+url = "2"
+uuid = "1"
+
+[workspace.lints.clippy]
+arithmetic_side_effects = "deny"
+as_conversions = "deny"
+exit = "deny"
+expect_used = "deny"
+indexing_slicing = "deny"
+nursery = {level = "deny", priority = -1}
+panic = "deny"
+panic_in_result_fn = "deny"
+pedantic = {level = "deny", priority = -1}
+string_slice = "deny"
+todo = "deny"
+unchecked_time_subtraction = "deny"
+unimplemented = "deny"
+unreachable = "deny"
+unwrap_used = "deny"
