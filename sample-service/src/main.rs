@@ -1,14 +1,18 @@
-use sample_service::{AppState, sample_api_router};
+fn main() {
+    // Run `serve()` on the server only
+    #[cfg(feature = "server")]
+    dioxus::serve(|| async move {
+        // Create a new router for our app using the `router` function
+        let router = dioxus::server::router(sample_service::App);
+        let openapi = sample_service::sample_api_router(sample_service::AppState {});
 
-#[tokio::main]
-async fn main() {
-    // initialize tracing
-    tracing_subscriber::fmt::init();
+        // .. customize the router, adding layers and new routes
 
-    // build our application with a route
-    let app = sample_api_router(AppState {});
+        // And then return the router
+        Ok(router.merge(openapi))
+    });
 
-    // run our app with hyper, listening globally on port 3000
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+    // When not on the server, just run `launch()` like normal
+    #[cfg(not(feature = "server"))]
+    dioxus::launch(sample_service::App);
 }
