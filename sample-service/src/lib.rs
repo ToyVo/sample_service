@@ -14,3 +14,8 @@ pub use frontend::*;
 pub mod components;
 /// Define a views module that contains the UI for all Layouts and Routes for our app.
 pub mod views;
+
+#[cfg(feature = "server")]
+pub mod models;
+#[cfg(feature = "server")]
+pub mod schema;
