@@ -48,6 +48,24 @@
               hash = "sha256-R1Tas33Ursy8kqsxguAkG0ZhNed2n5uFTAhw1l2qlLY=";
             };
           };
+          cargo-run = pkgs.rustPlatform.buildRustPackage rec {
+            pname = "cargo-run";
+            version = "0.6.0";
+
+            src = pkgs.fetchCrate {
+              inherit pname version;
+              hash = "sha256-Wv8V08sTsNmpzZSKAYkvwGDsd3lVLMK1m9iAvSU7HO0=";
+            };
+
+            cargoHash = "sha256-ps0ICgMSxxsZRtYrhC7aKgYvXVEjkNdvN1vDeXZozXc=";
+
+            meta = with pkgs.lib; {
+              description = "CLI tool for managing project scripts in Rust (provides `cargo-script` and `cgs`)";
+              homepage = "https://github.com/rsaz/cargo-script";
+              license = licenses.mit;
+              mainProgram = "cargo-script";
+            };
+          };
           openapi-to-rust = pkgs.rustPlatform.buildRustPackage (finalAttrs: {
             pname = "openapi-to-rust";
             version = "0.16.0";
@@ -100,7 +118,7 @@
           };
 
           packages = {
-            inherit openapi-to-rust wasm-bindgen-cli_0_2_128;
+            inherit cargo-run openapi-to-rust wasm-bindgen-cli_0_2_128;
           };
 
           devShells.default = pkgs.mkShell {
@@ -126,6 +144,7 @@
               binaryen
               cargo-generate
               cargo-nextest
+              cargo-run
               cargo-seek
               cmake
               diesel-cli
@@ -139,6 +158,7 @@
               openapi-to-rust
               openssl
               pkg-config
+              postgresql
               rustPlatform.bindgenHook
               secretspec
               wasm-bindgen-cli_0_2_128

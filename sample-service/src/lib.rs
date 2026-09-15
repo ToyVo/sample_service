@@ -18,4 +18,6 @@ pub mod views;
 #[cfg(feature = "server")]
 pub mod models;
 #[cfg(feature = "server")]
-pub mod schema;
+pub mod schemas;
+#[cfg(feature = "server")]
+pub mod store;

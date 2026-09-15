@@ -4,6 +4,7 @@ async-trait = {optional = true, workspace = true}
 axum = {features = ["http1", "json", "query", "tokio", "tracing"], optional = true, workspace = true}
 chrono = {features = ["serde"], optional = true, workspace = true}
 diesel = {features = ["chrono", "postgres", "returning_clauses_for_sqlite_3_35", "sqlite"], optional = true, workspace = true}
+diesel_migrations = {optional = true, workspace = true}
 dioxus = {features = ["fullstack", "router"], workspace = true}
 dioxus-primitives = {default-features = false, workspace = true}
 http-body-util = {optional = true, workspace = true}
@@ -36,6 +37,7 @@ server = [
   "dep:axum",
   "dep:chrono",
   "dep:diesel",
+  "dep:diesel_migrations",
   "dep:http-body-util",
   "dep:jsonschema",
   "dep:mime",

@@ -1,0 +1,23 @@
+[global_env]
+RUST_BACKTRACE = "1"
+
+[scripts]
+audit = {command = "cargo audit", info = "Security audit (needs cargo-audit)", requires = ["cargo-audit"]}
+build = {command = "cargo build --release", include = ["codegen"], info = "Release build (regenerates API types first)"}
+ci = {include = ["build", "fmt-check", "lint", "test"], info = "Full CI pipeline"}
+dev = {command = "dx serve", include = ["codegen"], info = "Serve with SQLite (default DATABASE_URL from secretspec.toml)"}
+dev-postgres = {command = "DATABASE_URL=postgresql://postgres@localhost:5433/sample dx serve", include = ["postgres-start", "codegen"], info = "Start local Postgres and serve against it"}
+fmt-check = "cargo fmt --all -- --check"
+lint = "cargo clippy --all-targets --all-features -- -D warnings"
+codegen = {command = "openapi-to-rust generate", info = "Regenerate typed API from src/sample.oas3.json"}
+codegen-all = {include = ["codegen", "db-migrate"], info = "Regenerate API types and both DB schemas (requires Postgres for the PG schema)"}
+test = "cargo test --all-features"
+db-migrate-sqlite = {command = "diesel migration run --config-file=diesel.sqlite.toml --database-url=sqlite://./dev.db", info = "Apply SQLite migrations to ./dev.db and regenerate src/schemas/sqlite.rs"}
+db-migrate-postgres = {command = "diesel migration run --config-file=diesel.postgresql.toml --database-url=postgresql://postgres@localhost:5433/sample", info = "Apply Postgres migrations and regenerate src/schemas/postgresql.rs (run postgres-start first)"}
+db-migrate = {include = ["db-migrate-sqlite", "db-migrate-postgres"], info = "Apply both SQLite and Postgres migrations"}
+postgres-start = {command = "./scripts/postgres.sh start", info = "Start local Postgres (data in ./dev.postgresql, port 5433, db sample)"}
+postgres-stop = {command = "./scripts/postgres.sh stop", info = "Stop local Postgres"}
+postgres-restart = {command = "./scripts/postgres.sh restart", info = "Restart local Postgres"}
+postgres-status = {command = "./scripts/postgres.sh status", info = "Show local Postgres status"}
+postgres-logs = {command = "./scripts/postgres.sh logs", info = "Tail local Postgres logs"}
+postgres-clean = {command = "./scripts/postgres.sh clean", info = "Stop Postgres and delete ./dev.postgresql (fresh start next time)"}

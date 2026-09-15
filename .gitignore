@@ -3,7 +3,9 @@
 .direnv
 a.py
 dev.db
+dev.postgresql/
 result
 result-*
+sample-service/src/generated/REQUIRED_DEPS.toml
 ssl
 target

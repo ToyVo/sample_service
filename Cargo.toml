@@ -21,6 +21,7 @@ clap = "4.6"
 color-eyre = "0.6"
 criterion = "0.8"
 diesel = "2.2"
+diesel_migrations = "2.3"
 dioxus = "0.7"
 dioxus-primitives = {git = "https://github.com/DioxusLabs/components", version = "0.0.1"}
 http-body-util = "0.1"

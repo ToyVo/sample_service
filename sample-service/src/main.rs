@@ -10,12 +10,14 @@ fn main() {
             .map_err(|err| anyhow::anyhow!("secrets failed to load: {err}"))?;
 
         resolved.secrets.set_as_env_vars();
-        let conn = sample_service::establish_connection()
+        let state = sample_service::establish_connection()
             .map_err(|err| anyhow::anyhow!("database connection failed: {err}"))?;
+        sample_service::run_pending_migrations(&state)
+            .map_err(|err| anyhow::anyhow!("database migration failed: {err}"))?;
 
         // Create a new router for our app using the `router` function
         let router = dioxus::server::router(sample_service::App);
-        let openapi = sample_service::sample_api_router(sample_service::AppState::new(conn));
+        let openapi = sample_service::sample_api_router(state);
 
         // .. customize the router, adding layers and new routes
 
