@@ -142,7 +142,9 @@
               (pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml)
               bacon
               binaryen
+              cargo-audit
               cargo-generate
+              cargo-llvm-cov
               cargo-nextest
               cargo-run
               cargo-seek

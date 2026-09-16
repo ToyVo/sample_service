@@ -1,0 +1,14 @@
+[dependencies]
+api = {workspace = true}
+dioxus = {workspace = true}
+
+[features]
+server = ["api/server"]
+
+[lints]
+workspace = true
+
+[package]
+edition = "2024"
+name = "ui"
+version = "0.1.0"

@@ -1,0 +1,44 @@
+# Generated from domain.oas3.json — do not edit manually. Regenerate with `cgs codegen`.
+@host=https://localhost:8080
+@app=domain
+@revision=1.0.0
+@profile=dev
+###
+# Gets samples method
+GET {{host}}/samples?offset=0&limit=100
+
+###
+# Creates a sample
+POST {{host}}/samples
+Content-Type: application/json
+{
+    "description": "sample description",
+    "imageUri": "https://example.com/example.png",
+    "name": "sample",
+    "status": "ACTIVE",
+    "tags": [
+        "sample"
+    ]
+}
+
+###
+# Removes a sample
+DELETE {{host}}/samples/12345
+
+###
+# Gets a sample
+GET {{host}}/samples/12345
+
+###
+# Updates a sample
+PATCH {{host}}/samples/12345
+Content-Type: application/json
+{
+    "description": "sample description",
+    "imageUri": "https://example.com/example.png",
+    "name": "sample",
+    "status": "ACTIVE",
+    "tags": [
+        "sample"
+    ]
+}

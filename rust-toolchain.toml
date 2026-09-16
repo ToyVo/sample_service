@@ -1,4 +1,4 @@
 [toolchain]
 channel = "nightly"
-components = ["cargo", "clippy", "rust-analyzer", "rust-src", "rustc"]
+components = ["cargo", "clippy", "llvm-tools-preview", "rust-analyzer", "rust-src", "rustc"]
 targets = ["aarch64-apple-ios", "aarch64-apple-ios-sim", "aarch64-linux-android", "armv7-linux-androideabi", "i686-linux-android", "wasm32-unknown-unknown", "x86_64-linux-android"]

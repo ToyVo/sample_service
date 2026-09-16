@@ -9,11 +9,18 @@ inherits = "dev"
 opt-level = 1
 
 [workspace]
-members = ["sample-service"]
+members = [
+  "packages/api",
+  "packages/desktop",
+  "packages/mobile",
+  "packages/ui",
+  "packages/web"
+]
 resolver = "2"
 
 [workspace.dependencies]
 anyhow = "1"
+api = {path = "packages/api"} # workspace
 async-trait = "0.1"
 axum = "0.8"
 chrono = "0.4"
@@ -41,6 +48,7 @@ serde_urlencoded = "0.7"
 thiserror = "2"
 tokio = "1"
 tracing-subscriber = "0.3"
+ui = {path = "packages/ui"} # workspace
 url = "2"
 uuid = "1"
 

@@ -1,0 +1,48 @@
+[global_env]
+RUST_BACKTRACE = "1"
+
+[scripts]
+audit = {command = "cargo audit", info = "Security audit (needs cargo-audit)", requires = ["cargo-audit"]}
+build = {command = "cargo build --release", include = ["codegen-oas"], info = "Release build (regenerates API types first)"}
+ci = {include = ["build", "fmt-check", "lint", "test"], info = "Full CI pipeline"}
+coverage = {command = "cargo llvm-cov nextest --workspace --all-features", info = "Run tests under coverage (nextest); prints summary table", pre = ["postgres"]}
+coverage-clean = {command = "cargo llvm-cov clean", info = "Remove coverage artifacts"}
+coverage-html = {command = "cargo llvm-cov --html nextest --workspace --all-features", info = "Coverage report as HTML in target/llvm-cov/html", pre = ["postgres"]}
+coverage-lcov = {command = "cargo llvm-cov --lcov --output-path lcov.info nextest --workspace --all-features", info = "Coverage report as lcov.info for external services", pre = ["postgres"]}
+db-migrate = {include = ["db-migrate-postgres", "db-migrate-sqlite"], info = "Apply both SQLite and Postgres migrations"}
+db-migrate-postgres = {command = "diesel migration run --config-file=diesel.postgresql.toml --database-url=postgresql://postgres@localhost:5433/sample", info = "Apply Postgres migrations and regenerate packages/api/src/schemas/postgresql.rs", pre = ["postgres"]}
+db-migrate-sqlite = {command = "diesel migration run --config-file=diesel.sqlite.toml --database-url=sqlite://./dev.db", info = "Apply SQLite migrations to ./dev.db and regenerate packages/api/src/schemas/sqlite.rs"}
+dev = {command = "dx serve -p web", include = ["codegen-oas"], info = "Serve with SQLite (default DATABASE_URL from secretspec.toml)"}
+dev-postgres = {command = "SECRETSPEC_PROFILE=dev dx serve -p web", include = ["codegen-oas"], info = "Start local Postgres and serve against it", pre = ["postgres"]}
+fmt = "cargo fmt --all"
+fmt-check = "cargo fmt --all -- --check"
+lint = "cargo clippy --all-targets --all-features -- -D warnings"
+regen = {include = ["codegen", "regen-clean"], info = "Delete and regenerate all codegen output (requires Postgres)"}
+regen-clean = {command = "rm -rf packages/api/src/generated packages/api/src/schemas/sqlite.rs packages/api/src/schemas/postgresql.rs", info = "Delete generated API code and schemas for a clean-room regen"}
+test = "cargo nextest run --all-features"
+
+[scripts.codegen]
+include = ["codegen-oas", "db-migrate"]
+info = "Regenerate API types and both DB schemas (requires Postgres for the PG schema)"
+post = ["fmt"]
+
+[scripts.codegen-http]
+# NOTE: script_file not used because it will insert +nightly in to the cargo command which doesn't work in the nix shell
+# script_file = "./scripts/gen_http.rs"
+command = "cargo -Zscript ./scripts/gen-http.rs"
+info = "Regenerate domain.http from domain.oas3.json"
+post = ["fmt"]
+
+[scripts.codegen-oas]
+command = "openapi-to-rust generate"
+include = ["codegen-http"]
+info = "Regenerate typed API from domain.oas3.json"
+post = ["fmt"]
+
+[scripts.postgres]
+args = ["action"]
+# NOTE: script_file not used because it will insert +nightly in to the cargo command which doesn't work in the nix shell
+# script_file = "./scripts/postgres.rs"
+command = "cargo -Zscript ./scripts/postgres.rs {{action}}"
+defaults = {action = "start"}
+info = "manage postgres"

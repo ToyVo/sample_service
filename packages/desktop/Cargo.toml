@@ -1,0 +1,16 @@
+[dependencies]
+dioxus = {features = ["fullstack", "router"], workspace = true}
+ui = {workspace = true}
+
+[features]
+default = []
+desktop = ["dioxus/desktop"]
+server = ["dioxus/server", "ui/server"]
+
+[lints]
+workspace = true
+
+[package]
+edition = "2024"
+name = "desktop"
+version = "0.1.0"

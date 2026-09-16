@@ -1,0 +1,77 @@
+[dependencies]
+async-trait = {optional = true, workspace = true}
+axum = {features = ["http1", "json", "query", "tokio", "tracing"], optional = true, workspace = true}
+chrono = {features = ["serde"], optional = true, workspace = true}
+diesel = {features = ["chrono", "postgres", "returning_clauses_for_sqlite_3_35", "sqlite"], optional = true, workspace = true}
+diesel_migrations = {optional = true, workspace = true}
+dioxus = {features = ["fullstack"], workspace = true}
+http-body-util = {optional = true, workspace = true}
+jsonschema = {default-features = false, optional = true, workspace = true}
+mime = {optional = true, workspace = true}
+reqwest = {default-features = false, features = ["query", "rustls", "stream"], optional = true, workspace = true}
+reqwest-middleware = {features = ["query"], optional = true, workspace = true}
+reqwest-retry = {default-features = false, optional = true, workspace = true}
+serde = {features = ["derive"], optional = true, workspace = true}
+serde_json = {optional = true, workspace = true}
+serde_urlencoded = {optional = true, workspace = true}
+thiserror = {optional = true, workspace = true}
+tokio = {features = ["full"], optional = true, workspace = true}
+tracing-subscriber = {features = ["env-filter"], optional = true, workspace = true}
+url = {optional = true, workspace = true}
+uuid = {features = ["v7"], optional = true, workspace = true}
+
+[features]
+server = [
+  "dep:async-trait",
+  "dep:axum",
+  "dep:chrono",
+  "dep:diesel",
+  "dep:diesel_migrations",
+  "dep:http-body-util",
+  "dep:jsonschema",
+  "dep:mime",
+  "dep:reqwest",
+  "dep:reqwest-middleware",
+  "dep:reqwest-retry",
+  "dep:serde",
+  "dep:serde_json",
+  "dep:serde_urlencoded",
+  "dep:thiserror",
+  "dep:tokio",
+  "dep:tracing-subscriber",
+  "dep:url",
+  "dep:uuid",
+  "dioxus/server"
+]
+
+[lints]
+workspace = true
+
+[package]
+edition = "2024"
+name = "api"
+version = "0.1.0"
+
+[[test]]
+name = "api_responses"
+required-features = ["server"]
+
+[[test]]
+name = "concurrency"
+required-features = ["server"]
+
+[[test]]
+name = "dual_backend"
+required-features = ["server"]
+
+[[test]]
+name = "http"
+required-features = ["server"]
+
+[[test]]
+name = "migrations"
+required-features = ["server"]
+
+[[test]]
+name = "pagination"
+required-features = ["server"]

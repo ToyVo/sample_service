@@ -6,6 +6,7 @@ dev.db
 dev.postgresql/
 result
 result-*
-sample-service/src/generated/REQUIRED_DEPS.toml
+lcov.info
+packages/api/src/generated/REQUIRED_DEPS.toml
 ssl
 target

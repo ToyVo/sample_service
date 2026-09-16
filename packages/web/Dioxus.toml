@@ -1,0 +1,21 @@
+[application]
+
+[web.app]
+# HTML title tag content
+title = "domain"
+
+[web.https]
+enabled = true
+mkcert = true
+
+# include `assets` in web platform
+[web.resource]
+# Additional JavaScript files
+script = []
+# Additional CSS style files
+style = []
+
+[web.resource.dev]
+# Javascript code file
+# serve: [dev-server] only
+script = []

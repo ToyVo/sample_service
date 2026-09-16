@@ -1,0 +1,27 @@
+[dependencies]
+anyhow = {optional = true, workspace = true}
+api = {workspace = true}
+dioxus = {features = ["fullstack", "router"], workspace = true}
+secretspec = {default-features = false, features = ["aac", "age", "akv", "awsps", "awssm", "bw", "bws", "cli", "cloudflare", "ejson", "gcsm", "infisical", "keeper", "keyring", "kubernetes", "openbao", "scaleway", "sops", "vault"], optional = true, workspace = true}
+secretspec-derive = {optional = true, workspace = true}
+ui = {workspace = true}
+
+[features]
+default = []
+server = [
+  "api/server",
+  "dep:anyhow",
+  "dep:secretspec",
+  "dep:secretspec-derive",
+  "dioxus/server",
+  "ui/server"
+]
+web = ["dioxus/web"]
+
+[lints]
+workspace = true
+
+[package]
+edition = "2024"
+name = "web"
+version = "0.1.0"
