@@ -4,6 +4,7 @@
 a.py
 dev.db
 dev.postgresql/
+dev.observability/
 result
 result-*
 lcov.info

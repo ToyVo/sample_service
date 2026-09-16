@@ -181,10 +181,16 @@ impl_sample_connection!(
 /// # Errors
 ///
 /// Returns the failure detail when the insert fails.
+#[tracing::instrument(
+    name = "store.create_sample",
+    skip(conn),
+    fields(db.system.name = tracing::field::Empty, db.operation.name = "insert", db.collection.name = "samples")
+)]
 pub(crate) fn create_sample(
     conn: &mut dyn SampleConnection,
     body: NewSample,
 ) -> Result<SampleData, String> {
+    tracing::Span::current().record("db.system.name", conn.backend_name());
     let id = UUID::random();
     let now = chrono::Utc::now().naive_utc();
     let data = SampleData::from_new_sample(id, now, body);
@@ -200,10 +206,16 @@ pub(crate) fn create_sample(
 /// # Errors
 ///
 /// Returns the failure detail when the query fails.
+#[tracing::instrument(
+    name = "store.get_sample",
+    skip(conn),
+    fields(db.system.name = tracing::field::Empty, db.operation.name = "select", db.collection.name = "samples")
+)]
 pub(crate) fn get_sample(
     conn: &mut dyn SampleConnection,
     db_id: UUID,
 ) -> Result<Option<SampleData>, String> {
+    tracing::Span::current().record("db.system.name", conn.backend_name());
     match conn.fetch_sample(db_id) {
         Ok(data) => Ok(Some(data)),
         Err(diesel::result::Error::NotFound) => Ok(None),
@@ -216,11 +228,17 @@ pub(crate) fn get_sample(
 /// # Errors
 ///
 /// Returns the failure detail when the query fails.
+#[tracing::instrument(
+    name = "store.get_samples",
+    skip(conn),
+    fields(db.system.name = tracing::field::Empty, db.operation.name = "select", db.collection.name = "samples")
+)]
 pub(crate) fn get_samples(
     conn: &mut dyn SampleConnection,
     offset: i64,
     limit: i64,
 ) -> Result<Vec<SampleData>, String> {
+    tracing::Span::current().record("db.system.name", conn.backend_name());
     conn.fetch_samples(offset, limit)
         .map_err(|err| err.to_string())
 }
@@ -231,11 +249,17 @@ pub(crate) fn get_samples(
 /// # Errors
 ///
 /// Returns the failure detail when the fetch or save fails.
+#[tracing::instrument(
+    name = "store.update_sample",
+    skip(conn),
+    fields(db.system.name = tracing::field::Empty, db.operation.name = "update", db.collection.name = "samples")
+)]
 pub(crate) fn update_sample(
     conn: &mut dyn SampleConnection,
     db_id: UUID,
     body: SampleUpdate,
 ) -> Result<Option<SampleData>, String> {
+    tracing::Span::current().record("db.system.name", conn.backend_name());
     let existing = match conn.fetch_sample(db_id) {
         Ok(data) => data,
         Err(diesel::result::Error::NotFound) => return Ok(None),
@@ -254,10 +278,16 @@ pub(crate) fn update_sample(
 /// # Errors
 ///
 /// Returns the failure detail when the fetch or delete fails.
+#[tracing::instrument(
+    name = "store.remove_sample",
+    skip(conn),
+    fields(db.system.name = tracing::field::Empty, db.operation.name = "delete", db.collection.name = "samples")
+)]
 pub(crate) fn remove_sample(
     conn: &mut dyn SampleConnection,
     db_id: UUID,
 ) -> Result<Option<SampleData>, String> {
+    tracing::Span::current().record("db.system.name", conn.backend_name());
     let existing = match conn.fetch_sample(db_id) {
         Ok(data) => data,
         Err(diesel::result::Error::NotFound) => return Ok(None),

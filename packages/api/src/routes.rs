@@ -1,4 +1,8 @@
 use dioxus::prelude::*;
+use dioxus_fullstack::{
+    response::{IntoResponse, Response},
+    http::{header, StatusCode}
+};
 
 #[cfg(feature = "server")]
 use crate::models::SampleData;
@@ -10,12 +14,20 @@ use crate::{
     UpdateSampleResponse, UpdateSampleServerResponse, internal_error, lock_db, not_found, parse_id,
 };
 
-/// Echo the user input on the server.
-// `async` is required by `#[post]` even though this body needs no `.await`.
+/// The `OpenAPI` document, embedded at compile time.
+pub const SPEC_JSON: &str = include_str!("../../../domain.oas3.json");
+
+// `async` is required by `#[get]` even though this body needs no `.await`.
 #[allow(clippy::unused_async)]
-#[post("/api/echo")]
-pub async fn echo(input: String) -> Result<String, ServerFnError> {
-    Ok(input)
+#[get("/api")]
+pub async fn oas3() -> Result<Response, ServerFnError> {
+    let response = (
+        StatusCode::OK,
+        [(header::CONTENT_TYPE, "application/json")],
+        SPEC_JSON, // Serves the raw unescaped string directly
+    ).into_response();
+
+    Ok(response)
 }
 
 // ---------------------------------------------------------------------------

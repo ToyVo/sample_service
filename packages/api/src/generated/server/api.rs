@@ -10,15 +10,15 @@ use super::errors::*;
 pub trait SampleApi: Send + Sync + 'static {
     ///
     ///
-    /// `POST /samples`
+    /// `POST /api/samples`
     async fn create_sample(&self, body: super::super::types::NewSample) -> CreateSampleResponse;
     ///
     ///
-    /// `GET /samples/{sampleId}`
+    /// `GET /api/samples/{sampleId}`
     async fn get_sample(&self, sample_id: String) -> GetSampleServerResponse;
     ///
     ///
-    /// `GET /samples`
+    /// `GET /api/samples`
     async fn get_samples(
         &self,
         offset: ::std::option::Option<i64>,
@@ -26,11 +26,11 @@ pub trait SampleApi: Send + Sync + 'static {
     ) -> GetSamplesServerResponse;
     ///
     ///
-    /// `DELETE /samples/{sampleId}`
+    /// `DELETE /api/samples/{sampleId}`
     async fn remove_sample(&self, sample_id: String) -> RemoveSampleServerResponse;
     ///
     ///
-    /// `PATCH /samples/{sampleId}`
+    /// `PATCH /api/samples/{sampleId}`
     async fn update_sample(
         &self,
         sample_id: String,

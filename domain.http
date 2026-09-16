@@ -5,14 +5,14 @@
 @profile=dev
 ###
 # Gets samples method
-GET {{host}}/samples?offset=0&limit=100
+GET {{host}}/api/samples?offset=0&limit=100
 
 ###
 # Creates a sample
-POST {{host}}/samples
+POST {{host}}/api/samples
 Content-Type: application/json
 {
-    "description": "sample description",
+    "description": "example sample description",
     "imageUri": "https://example.com/example.png",
     "name": "sample",
     "status": "ACTIVE",
@@ -23,22 +23,23 @@ Content-Type: application/json
 
 ###
 # Removes a sample
-DELETE {{host}}/samples/12345
+DELETE {{host}}/api/samples/01a09e49-eef3-74cb-a86f-5ea209c1f923
 
 ###
 # Gets a sample
-GET {{host}}/samples/12345
+GET {{host}}/api/samples/01a09e49-eef3-74cb-a86f-5ea209c1f923
 
 ###
 # Updates a sample
-PATCH {{host}}/samples/12345
+PATCH {{host}}/api/samples/01a09e49-eef3-74cb-a86f-5ea209c1f923
 Content-Type: application/json
 {
-    "description": "sample description",
-    "imageUri": "https://example.com/example.png",
-    "name": "sample",
-    "status": "ACTIVE",
+    "description": "example sample description updated",
+    "imageUri": "https://example.com/example-updated.png",
+    "name": "sample updated",
+    "status": "INACTIVE",
     "tags": [
-        "sample"
+        "sample",
+        "updated"
     ]
 }

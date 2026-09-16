@@ -1,0 +1,41 @@
+# Local observability pipeline (managed by `cgs otel-up`, config for `otelcol`).
+#
+#   app --OTLP/HTTP:4318--> collector --OTLP/HTTP:4321--> Tempo (traces)
+#                                \--Prometheus exporter :8889--> Prometheus (metrics)
+#
+# Standard ports stay on the collector (4317/4318) so `OTEL_*` defaults just
+# work; downstream ports are remapped to avoid clashes.
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 127.0.0.1:4317
+      http:
+        endpoint: 127.0.0.1:4318
+
+processors:
+  batch: {}
+
+exporters:
+  otlp_http/tempo:
+    endpoint: http://127.0.0.1:4321
+  prometheus:
+    endpoint: 127.0.0.1:8889
+  debug:
+    verbosity: basic
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp_http/tempo]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [prometheus]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug]

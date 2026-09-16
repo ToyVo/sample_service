@@ -220,7 +220,7 @@ enum Route {
 #[component]
 fn NavBar() -> Element {
 	rsx! {
-		a { href: "/", "Home" }
+		Link { to: "/", "Home" }
 		Outlet<Route> {} // Renders Home or BlogPost
 	}
 }

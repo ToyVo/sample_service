@@ -1,0 +1,102 @@
+/* Compositor-friendly collapsible. Only `opacity`, `transform`, and
+   `rotate` animate (all compositor props). Never animate `height`,
+   `max-height`, `grid-template-rows`, margins, or padding here — those force
+   Style → Reflow → DisplayList on every frame (see Firefox profile:
+   `dx-accordion-slide-up/down` with `oncompositor: false, false`). */
+
+.dx-collapsible-list {
+  contain: inline-size;
+}
+
+.dx-collapsible {
+  overflow: hidden;
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--primary-color-6);
+  margin-top: 1px;
+  /* Scope the data-open attribute flip so style invalidation doesn't walk
+     the whole page. */
+  contain: layout style;
+}
+
+.dx-collapsible:first-child {
+  margin-top: 0;
+}
+
+.dx-collapsible:last-child {
+  border-bottom: none;
+}
+
+.dx-collapsible-trigger {
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  border: none;
+  background-color: transparent;
+  color: var(--secondary-color-4);
+  outline: none;
+  text-align: left;
+}
+
+.dx-collapsible-trigger:focus-visible {
+  border: none;
+  box-shadow: inset 0 0 0 2px var(--focused-border-color);
+}
+
+.dx-collapsible-trigger:hover:not(:disabled) {
+  cursor: pointer;
+  text-decoration-line: underline;
+}
+
+.dx-collapsible-trigger:disabled {
+  color: var(--secondary-color-5);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.dx-collapsible-content {
+  display: block;
+  contain: layout style;
+  /* Skip offscreen bodies entirely until near viewport. Unmounted when
+     closed anyway; this helps long open bodies. */
+  content-visibility: auto;
+}
+
+/* Mount animation: compositor props only. No exit animation — closed content
+   unmounts instantly instead of lingering 300ms for getAnimations(). */
+@media (prefers-reduced-motion: no-preference) {
+  .dx-collapsible-content[data-open="true"] {
+    animation: dx-collapsible-in 200ms ease-out;
+  }
+}
+
+@keyframes dx-collapsible-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dx-collapsible-content[data-open="true"] {
+    animation: none;
+  }
+}
+
+.dx-collapsible-expand-icon {
+  flex: none;
+  transition: rotate 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dx-collapsible[data-open="true"] .dx-collapsible-expand-icon {
+  rotate: 180deg;
+}

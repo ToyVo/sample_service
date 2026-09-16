@@ -18,7 +18,7 @@ use api::{
 use std::net::SocketAddr;
 
 async fn serve(state: AppState) -> (SocketAddr, tokio::task::JoinHandle<()>) {
-    let router = api::sample_api_router(state);
+    let router = api::router_with_telemetry(state).merge(api::docs_router());
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
         .await
         .expect("binds ephemeral port");
@@ -309,4 +309,49 @@ async fn crud_flow_over_http_against_postgres() {
     assert_eq!(got.data.expect("row").name, "pg-http");
     server.abort();
     guard.cleanup();
+}
+
+#[tokio::test]
+async fn docs_pages_serve() {
+    let (addr, server) = serve(support::sqlite_state()).await;
+    let base = format!("http://{addr}");
+    let client = reqwest::Client::new();
+
+    // The raw spec for tooling.
+    let response = client
+        .get(format!("{base}/openapi.json"))
+        .send()
+        .await
+        .expect("got spec");
+    assert_eq!(response.status(), reqwest::StatusCode::OK);
+    let content_type = response
+        .headers()
+        .get(reqwest::header::CONTENT_TYPE)
+        .expect("content type")
+        .to_str()
+        .expect("header str")
+        .to_owned();
+    assert!(
+        content_type.contains("application/json"),
+        "spec is json: {content_type}"
+    );
+    let text = response.text().await.expect("reads body");
+    let spec: serde_json::Value = serde_json::from_str(&text).expect("spec parses");
+    let title = spec
+        .get("info")
+        .and_then(|info| info.get("title"))
+        .and_then(serde_json::Value::as_str)
+        .expect("title");
+    assert_eq!(title, "Samples");
+    assert!(
+        spec.get("paths")
+            .and_then(|paths| paths.get("/samples"))
+            .is_some(),
+        "spec documents /samples"
+    );
+
+    // NOTE: `/console` is a Dioxus route (see the `web` crate), so it is not
+    // mounted on this bare API router; its request-building logic is covered
+    // by unit tests in `packages/web/src/views/console.rs`.
+    server.abort();
 }

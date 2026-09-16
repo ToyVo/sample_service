@@ -39,7 +39,7 @@ impl IntoResponse for RequestValidationRejection {
         response
     }
 }
-/// Response for `POST /samples` (operationId `createSample`).
+/// Response for `POST /api/samples` (operationId `createSample`).
 pub enum CreateSampleResponse {
     Created(CreateSampleResponse201),
 }
@@ -61,7 +61,7 @@ impl IntoResponse for CreateSampleResponse {
         }
     }
 }
-/// Response for `GET /samples/{sampleId}` (operationId `getSample`).
+/// Response for `GET /api/samples/{sampleId}` (operationId `getSample`).
 pub enum GetSampleServerResponse {
     Ok(GetSampleResponse),
 }
@@ -83,7 +83,7 @@ impl IntoResponse for GetSampleServerResponse {
         }
     }
 }
-/// Response for `GET /samples` (operationId `getSamples`).
+/// Response for `GET /api/samples` (operationId `getSamples`).
 pub enum GetSamplesServerResponse {
     Ok(GetSamplesResponse),
 }
@@ -105,7 +105,7 @@ impl IntoResponse for GetSamplesServerResponse {
         }
     }
 }
-/// Response for `DELETE /samples/{sampleId}` (operationId `removeSample`).
+/// Response for `DELETE /api/samples/{sampleId}` (operationId `removeSample`).
 pub enum RemoveSampleServerResponse {
     Ok(RemoveSampleResponse),
 }
@@ -127,7 +127,7 @@ impl IntoResponse for RemoveSampleServerResponse {
         }
     }
 }
-/// Response for `PATCH /samples/{sampleId}` (operationId `updateSample`).
+/// Response for `PATCH /api/samples/{sampleId}` (operationId `updateSample`).
 pub enum UpdateSampleServerResponse {
     Ok(UpdateSampleResponse),
 }

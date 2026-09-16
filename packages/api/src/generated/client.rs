@@ -324,12 +324,12 @@ fn __pct_encode_path_segment(s: &str) -> String {
 impl HttpClient {
     /// Creates a sample
     ///
-    /// `POST /samples`
+    /// `POST /api/samples`
     pub async fn create_sample(
         &self,
         request: NewSample,
     ) -> Result<CreateSampleResponse201, ApiOpError<serde_json::Value>> {
-        let request_url = format!("{}{}", self.base_url, "/samples");
+        let request_url = format!("{}{}", self.base_url, "/api/samples");
         let mut req = self.http_client.post(request_url);
         req = req
             .body(serde_json::to_vec(&request).map_err(HttpError::serialization_error)?)
@@ -402,7 +402,7 @@ impl HttpClient {
     }
     /// Gets a sample
     ///
-    /// `GET /samples/{sampleId}`
+    /// `GET /api/samples/{sampleId}`
     pub async fn get_sample(
         &self,
         sample_id: impl AsRef<str>,
@@ -410,7 +410,10 @@ impl HttpClient {
         let request_url = format!(
             "{}{}",
             self.base_url,
-            format!("/samples/{}", __pct_encode_path_segment(sample_id.as_ref()))
+            format!(
+                "/api/samples/{}",
+                __pct_encode_path_segment(sample_id.as_ref())
+            )
         );
         let mut req = self.http_client.get(request_url);
         if let Some(api_key) = &self.api_key {
@@ -481,13 +484,13 @@ impl HttpClient {
     }
     /// Gets samples method
     ///
-    /// `GET /samples`
+    /// `GET /api/samples`
     pub async fn get_samples(
         &self,
         offset: Option<i64>,
         limit: Option<i64>,
     ) -> Result<GetSamplesResponse, ApiOpError<serde_json::Value>> {
-        let request_url = format!("{}{}", self.base_url, "/samples");
+        let request_url = format!("{}{}", self.base_url, "/api/samples");
         let mut req = self.http_client.get(request_url);
         {
             let mut query_params: Vec<(String, String)> = Vec::new();
@@ -569,7 +572,7 @@ impl HttpClient {
     }
     /// Removes a sample
     ///
-    /// `DELETE /samples/{sampleId}`
+    /// `DELETE /api/samples/{sampleId}`
     pub async fn remove_sample(
         &self,
         sample_id: impl AsRef<str>,
@@ -577,7 +580,10 @@ impl HttpClient {
         let request_url = format!(
             "{}{}",
             self.base_url,
-            format!("/samples/{}", __pct_encode_path_segment(sample_id.as_ref()))
+            format!(
+                "/api/samples/{}",
+                __pct_encode_path_segment(sample_id.as_ref())
+            )
         );
         let mut req = self.http_client.delete(request_url);
         if let Some(api_key) = &self.api_key {
@@ -648,7 +654,7 @@ impl HttpClient {
     }
     /// Updates a sample
     ///
-    /// `PATCH /samples/{sampleId}`
+    /// `PATCH /api/samples/{sampleId}`
     pub async fn update_sample(
         &self,
         sample_id: impl AsRef<str>,
@@ -657,7 +663,10 @@ impl HttpClient {
         let request_url = format!(
             "{}{}",
             self.base_url,
-            format!("/samples/{}", __pct_encode_path_segment(sample_id.as_ref()))
+            format!(
+                "/api/samples/{}",
+                __pct_encode_path_segment(sample_id.as_ref())
+            )
         );
         let mut req = self.http_client.patch(request_url);
         req = req

@@ -4,22 +4,23 @@
 
 use dioxus::prelude::*;
 
-use ui::Navbar;
-use views::{Blog, Home};
-
-mod views;
+use ui::{Console, Docs, Navbar, THEME_CSS, components::navbar::NavbarItem};
 
 #[derive(Debug, Clone, Routable, PartialEq)]
 #[rustfmt::skip]
 enum Route {
     #[layout(MobileNavbar)]
-    #[route("/")]
-    Home {},
-    #[route("/blog/:id")]
-    Blog { id: i32 },
+    #[route("/docs", DocsPage)]
+    Docs {},
+    #[route("/console", ConsolePage)]
+    Console {},
 }
 
-const MAIN_CSS: Asset = asset!("/assets/main.css");
+// Preloaded into base html at compile time to avoid FOUC (Dioxus #3970).
+const MAIN_CSS: Asset = asset!(
+    "/assets/main.css",
+    CssAssetOptions::new().with_preload(true)
+);
 
 fn main() {
     dioxus::launch(App);
@@ -32,6 +33,7 @@ fn App() -> Element {
     rsx! {
         // Global app resources
         document::Link { rel: "stylesheet", href: MAIN_CSS }
+        document::Link { rel: "stylesheet", href: THEME_CSS }
 
         Router::<Route> {}
     }
@@ -43,16 +45,37 @@ fn App() -> Element {
 fn MobileNavbar() -> Element {
     rsx! {
         Navbar {
-            Link {
-                to: Route::Home {},
-                "Home"
+            NavbarItem {
+                index: 0usize,
+                value: "docs".to_string(),
+                to: Route::Docs {},
+                "API Docs"
             }
-            Link {
-                to: Route::Blog { id: 1 },
-                "Blog"
+            NavbarItem {
+                index: 1usize,
+                value: "console".to_string(),
+                to: Route::Console {},
+                "API Console"
             }
         }
 
         Outlet::<Route> {}
+    }
+}
+
+/// Wraps shared `Docs` with the mobile-specific console target, so `ui`
+/// never names this crate's `Route` enum yet `Link` still navigates client-side.
+#[component]
+fn DocsPage() -> Element {
+    rsx! {
+        Docs { console_target: Route::Console {}.into() }
+    }
+}
+
+/// Wraps shared `Console` with the mobile-specific docs target.
+#[component]
+fn ConsolePage() -> Element {
+    rsx! {
+        Console { docs_target: Route::Docs {}.into() }
     }
 }

@@ -6,6 +6,7 @@ use crate::models::UUID;
 use crate::store::SampleConnection;
 use crate::{Error, ErrorCode};
 
+#[must_use]
 pub fn internal_error(detail: String) -> Error {
     Error {
         code: ErrorCode::InternalServerError,
@@ -17,6 +18,7 @@ pub fn internal_error(detail: String) -> Error {
     }
 }
 
+#[must_use]
 pub fn not_found(sample_id: &str) -> Error {
     Error {
         code: ErrorCode::NotFound,
@@ -90,6 +92,7 @@ impl AppState {
 ///
 /// Accepts both `postgres://…` and `postgresql://…` (case-sensitive, matching
 /// Diesel / libpq conventions).
+#[must_use]
 pub fn is_postgres_url(url: &str) -> bool {
     url.starts_with("postgres://") || url.starts_with("postgresql://")
 }
@@ -99,6 +102,7 @@ pub fn is_postgres_url(url: &str) -> bool {
 /// Accepts `sqlite://…`, `sqlite:…`, plain paths (`./dev.db`), and anything
 /// without a `://` scheme. Anything else with a scheme (e.g. `mysql://…`) is
 /// not SQLite.
+#[must_use]
 pub fn is_sqlite_url(url: &str) -> bool {
     if url.starts_with("sqlite://") || url.starts_with("sqlite:") {
         return true;
@@ -107,6 +111,7 @@ pub fn is_sqlite_url(url: &str) -> bool {
 }
 
 /// Strip the `sqlite://` / `sqlite:` prefix to a filesystem path.
+#[must_use]
 pub fn sqlite_path(url: &str) -> &str {
     url.strip_prefix("sqlite://")
         .or_else(|| url.strip_prefix("sqlite:"))

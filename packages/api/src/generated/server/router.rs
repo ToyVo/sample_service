@@ -81,7 +81,7 @@ fn __query_empty_marker(
         None => Ok(false),
     }
 }
-/// Query parameters for `GET /samples` (operationId `getSamples`).
+/// Query parameters for `GET /api/samples` (operationId `getSamples`).
 #[derive(Debug, Default)]
 pub struct GetSamplesQuery {
     pub offset: ::std::option::Option<i64>,
@@ -109,20 +109,23 @@ where
 {
     ::axum::Router::new()
         .route(
-            "/samples",
+            "/api/samples",
             ::axum::routing::post(create_sample_handler::<T>),
         )
         .route(
-            "/samples/{sampleId}",
+            "/api/samples/{sampleId}",
             ::axum::routing::get(get_sample_handler::<T>),
         )
-        .route("/samples", ::axum::routing::get(get_samples_handler::<T>))
         .route(
-            "/samples/{sampleId}",
+            "/api/samples",
+            ::axum::routing::get(get_samples_handler::<T>),
+        )
+        .route(
+            "/api/samples/{sampleId}",
             ::axum::routing::delete(remove_sample_handler::<T>),
         )
         .route(
-            "/samples/{sampleId}",
+            "/api/samples/{sampleId}",
             ::axum::routing::patch(update_sample_handler::<T>),
         )
         .layer(::axum::extract::DefaultBodyLimit::max(2097152usize))

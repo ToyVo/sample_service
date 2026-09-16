@@ -8,6 +8,10 @@ dioxus = {features = ["fullstack"], workspace = true}
 http-body-util = {optional = true, workspace = true}
 jsonschema = {default-features = false, optional = true, workspace = true}
 mime = {optional = true, workspace = true}
+opentelemetry = {optional = true, workspace = true}
+opentelemetry-appender-tracing = {optional = true, workspace = true}
+opentelemetry-otlp = {optional = true, workspace = true}
+opentelemetry_sdk = {optional = true, workspace = true}
 reqwest = {default-features = false, features = ["query", "rustls", "stream"], optional = true, workspace = true}
 reqwest-middleware = {features = ["query"], optional = true, workspace = true}
 reqwest-retry = {default-features = false, optional = true, workspace = true}
@@ -16,6 +20,8 @@ serde_json = {optional = true, workspace = true}
 serde_urlencoded = {optional = true, workspace = true}
 thiserror = {optional = true, workspace = true}
 tokio = {features = ["full"], optional = true, workspace = true}
+tracing = {optional = true, workspace = true}
+tracing-opentelemetry = {optional = true, workspace = true}
 tracing-subscriber = {features = ["env-filter"], optional = true, workspace = true}
 url = {optional = true, workspace = true}
 uuid = {features = ["v7"], optional = true, workspace = true}
@@ -30,6 +36,10 @@ server = [
   "dep:http-body-util",
   "dep:jsonschema",
   "dep:mime",
+  "dep:opentelemetry",
+  "dep:opentelemetry-appender-tracing",
+  "dep:opentelemetry-otlp",
+  "dep:opentelemetry_sdk",
   "dep:reqwest",
   "dep:reqwest-middleware",
   "dep:reqwest-retry",
@@ -38,6 +48,8 @@ server = [
   "dep:serde_urlencoded",
   "dep:thiserror",
   "dep:tokio",
+  "dep:tracing",
+  "dep:tracing-opentelemetry",
   "dep:tracing-subscriber",
   "dep:url",
   "dep:uuid",

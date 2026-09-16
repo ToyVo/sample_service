@@ -15,11 +15,11 @@ serde_json = "1"
 //! cargo run -q -p api --all-features --example gen_http
 //! ```
 //!
-//! Output is deterministic (spec maps iterate in sorted key order) and mirrors
-//! the hand-written file it replaces: a variable header plus one `###` block
-//! per operation with example path values, query strings, and JSON bodies.
-//! Example values prefer schema `example`/`default` entries, then `enum`
-//! first variants and small name-based heuristics for free-form strings.
+//! Output is deterministic (spec maps iterate in sorted key order): a variable
+//! header plus one `###` block per operation with example path values, query
+//! strings, and JSON bodies. Example values come straight from the spec
+//! (`example` → `default` → first `enum` variant, media-level `example` first
+//! for bodies); anything undocumented falls back to neutral type shapes.
 
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
@@ -66,23 +66,11 @@ fn int_field(schema: &serde_json::Value, key: &str) -> Option<i64> {
     schema.get(key).and_then(serde_json::Value::as_i64)
 }
 
-/// Name-based example for free-form strings (used only when the schema
-/// carries no `example`, `default`, or `enum` of its own).
-fn example_string(name: &str) -> String {
-    let lower = name.to_lowercase();
-    if lower == "name" {
-        "sample".to_owned()
-    } else if lower.contains("description") {
-        "sample description".to_owned()
-    } else if lower.contains("uri") || lower.contains("url") || lower.contains("image") {
-        "https://example.com/example.png".to_owned()
-    } else {
-        "sample".to_owned()
-    }
-}
-
-/// Example scalar for a schema: `example` → `default` → type-shaped fallback.
-fn example_scalar(schema: &serde_json::Value, name: &str) -> serde_json::Value {
+/// Example value straight from the spec: `example` → `default` → first
+/// `enum` variant. Anything else falls back to a neutral type-shaped value
+/// so output stays well-formed; undocumented strings render empty rather
+/// than guessed, which visibly signals missing spec data.
+fn example_scalar(schema: &serde_json::Value) -> serde_json::Value {
     if let Some(example) = schema.get("example") {
         return example.clone();
     }
@@ -104,21 +92,16 @@ fn example_scalar(schema: &serde_json::Value, name: &str) -> serde_json::Value {
         Some("boolean") => serde_json::Value::from(true),
         Some("array") => schema
             .get("items")
-            .map(|items| serde_json::Value::Array(vec![example_scalar(items, name)]))
+            .map(|items| serde_json::Value::Array(vec![example_scalar(items)]))
             .unwrap_or_else(|| serde_json::Value::Array(Vec::new())),
-        _ => serde_json::Value::String(example_string(name)),
+        _ => serde_json::Value::String(String::new()),
     }
 }
 
-/// Example for a path-template variable. Id-like names use a short numeric
-/// id (as in the previous hand-written file); everything else falls back to
-/// the scalar rules.
-fn example_path_segment(schema: &serde_json::Value, name: &str) -> String {
-    if name.to_lowercase().contains("id") && schema.get("example").is_none() {
-        return "12345".to_owned();
-    }
-    match example_scalar(schema, name) {
-        serde_json::Value::String(text) => text,
+/// Render a scalar example as URL text.
+fn display_scalar(value: &serde_json::Value) -> String {
+    match value {
+        serde_json::Value::String(text) => text.clone(),
         other => other.to_string(),
     }
 }
@@ -138,7 +121,7 @@ fn example_object(
                 serde_json::Value::Object(example_object(doc, resolved)?),
             );
         } else {
-            object.insert(key.clone(), example_scalar(resolved, key));
+            object.insert(key.clone(), example_scalar(resolved));
         }
     }
     Some(object)
@@ -229,13 +212,9 @@ fn render_operation(
         let schema = resolve_schema(doc, &param.schema).unwrap_or(&param.schema);
         if param.location == "path" {
             let placeholder = format!("{{{}}}", param.name);
-            url = url.replace(&placeholder, &example_path_segment(schema, &param.name));
+            url = url.replace(&placeholder, &display_scalar(&example_scalar(schema)));
         } else if param.location == "query" {
-            let value = example_scalar(schema, &param.name);
-            let text = match &value {
-                serde_json::Value::String(text) => text.clone(),
-                _ => value.to_string(),
-            };
+            let text = display_scalar(&example_scalar(schema));
             query.push(format!("{}={text}", param.name));
         }
     }
@@ -261,17 +240,24 @@ fn render_operation(
             .or_else(|| content.keys().next());
         if let Some(media) = media {
             block.push(format!("Content-Type: {media}"));
-            let schema = content
-                .get(media)
-                .and_then(|entry| entry.get("schema"))
-                .and_then(|schema| resolve_schema(doc, schema));
-            match schema {
-                Some(resolved) => match example_object(doc, resolved) {
-                    Some(object) => block.push(pretty_json(&serde_json::Value::Object(object))?),
-                    None => block.push("{}".to_owned()),
-                },
-                None => block.push("{}".to_owned()),
-            }
+            let entry = content.get(media);
+            // A media-type-level `example` is used verbatim when present.
+            let rendered = match entry.and_then(|entry| entry.get("example")) {
+                Some(example) => pretty_json(example)?,
+                None => {
+                    let schema = entry
+                        .and_then(|entry| entry.get("schema"))
+                        .and_then(|schema| resolve_schema(doc, schema));
+                    match schema {
+                        Some(resolved) => match example_object(doc, resolved) {
+                            Some(object) => pretty_json(&serde_json::Value::Object(object))?,
+                            None => "{}".to_owned(),
+                        },
+                        None => "{}".to_owned(),
+                    }
+                }
+            };
+            block.push(rendered);
         }
     }
     Ok(block)

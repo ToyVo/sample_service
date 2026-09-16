@@ -6,7 +6,7 @@
     "description": "Example service definition to demonstrate the features of OpenAPI"
   },
   "paths": {
-    "/samples": {
+    "/api/samples": {
       "get": {
         "operationId": "getSamples",
         "description": "Gets samples method",
@@ -30,6 +30,13 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/newSample"
+              },
+              "example": {
+                "description": "example sample description",
+                "imageUri": "https://example.com/example.png",
+                "name": "sample",
+                "status": "ACTIVE",
+                "tags": ["sample"]
               }
             }
           }
@@ -39,7 +46,7 @@
         }
       }
     },
-    "/samples/{sampleId}": {
+    "/api/samples/{sampleId}": {
       "parameters": [
         {
           "name": "sampleId",
@@ -49,7 +56,8 @@
           "schema": {
             "type": "string",
             "minLength": 5,
-            "maxLength": 36
+            "maxLength": 36,
+            "example": "01a09e49-eef3-74cb-a86f-5ea209c1f923"
           }
         }
       ],
@@ -72,6 +80,13 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/sampleUpdate"
+              },
+              "example": {
+                "description": "example sample description updated",
+                "imageUri": "https://example.com/example-updated.png",
+                "name": "sample updated",
+                "status": "INACTIVE",
+                "tags": ["sample", "updated"]
               }
             }
           }

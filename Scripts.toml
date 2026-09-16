@@ -13,10 +13,12 @@ db-migrate = {include = ["db-migrate-postgres", "db-migrate-sqlite"], info = "Ap
 db-migrate-postgres = {command = "diesel migration run --config-file=diesel.postgresql.toml --database-url=postgresql://postgres@localhost:5433/sample", info = "Apply Postgres migrations and regenerate packages/api/src/schemas/postgresql.rs", pre = ["postgres"]}
 db-migrate-sqlite = {command = "diesel migration run --config-file=diesel.sqlite.toml --database-url=sqlite://./dev.db", info = "Apply SQLite migrations to ./dev.db and regenerate packages/api/src/schemas/sqlite.rs"}
 dev = {command = "dx serve -p web", include = ["codegen-oas"], info = "Serve with SQLite (default DATABASE_URL from secretspec.toml)"}
-dev-postgres = {command = "SECRETSPEC_PROFILE=dev dx serve -p web", include = ["codegen-oas"], info = "Start local Postgres and serve against it", pre = ["postgres"]}
+dev-otel = {command = "dx serve -p web", include = ["codegen-oas"], info = "Start observability stack and serve with SQLite", pre = ["otel"]}
+dev-postgres = {command = "SECRETSPEC_PROFILE=dev dx serve -p web", include = ["codegen-oas"], info = "Start local Postgres and serve against it", pre = ["otel", "postgres"]}
 fmt = "cargo fmt --all"
 fmt-check = "cargo fmt --all -- --check"
 lint = "cargo clippy --all-targets --all-features -- -D warnings"
+otel-logs = {command = "cargo -Zscript ./scripts/otel.rs logs collector", info = "Follow collector logs (tempo|prometheus|grafana via cargo -Zscript ./scripts/otel.rs logs <service>)"}
 regen = {include = ["codegen", "regen-clean"], info = "Delete and regenerate all codegen output (requires Postgres)"}
 regen-clean = {command = "rm -rf packages/api/src/generated packages/api/src/schemas/sqlite.rs packages/api/src/schemas/postgresql.rs", info = "Delete generated API code and schemas for a clean-room regen"}
 test = "cargo nextest run --all-features"
@@ -38,6 +40,12 @@ command = "openapi-to-rust generate"
 include = ["codegen-http"]
 info = "Regenerate typed API from domain.oas3.json"
 post = ["fmt"]
+
+[scripts.otel]
+args = ["action"]
+command = "cargo -Zscript ./scripts/otel.rs {{action}}"
+defaults = {action = "up"}
+info = "manage observability stack (up|down|restart|status|logs|clean)"
 
 [scripts.postgres]
 args = ["action"]

@@ -152,15 +152,19 @@
               diesel-cli
               diesel-cli-ext
               dioxus-cli
+              grafana
               httpyac
               libiconv
               libpq
               mkcert
               nss.tools
               openapi-to-rust
+              opentelemetry-collector
               openssl
               pkg-config
               postgresql
+              prometheus
+              tempo
               rustPlatform.bindgenHook
               secretspec
               wasm-bindgen-cli_0_2_128

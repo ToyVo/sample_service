@@ -15,3 +15,7 @@ pub mod state;
 pub use state::*;
 #[cfg(feature = "server")]
 pub mod store;
+#[cfg(feature = "server")]
+pub mod telemetry;
+#[cfg(feature = "server")]
+pub use telemetry::*;
