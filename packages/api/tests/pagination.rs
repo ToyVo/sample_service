@@ -9,7 +9,7 @@
 
 mod support;
 
-use api::{CreateSampleResponse, GetSamplesServerResponse, NewSample, SampleApi, Status};
+use api::{CodegenApi, CreateSampleResponse, GetSamplesServerResponse, NewSample, Status};
 
 async fn seed(state: &api::AppState, prefix: &str, count: usize) -> Vec<String> {
     let mut ids = Vec::new();

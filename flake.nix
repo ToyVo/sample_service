@@ -124,10 +124,17 @@
           devShells.default = pkgs.mkShell {
             shellHook = ''
               export BINARYEN_CORES=1
-              export RUST_LOG="debug"
+              export RUST_LOG="debug,opentelemetry_sdk=warn,opentelemetry-otlp=warn,reqwest=warn,hyper_util=warn"
               export RUST_SRC_PATH=${pkgs.rustPlatform.rustLibSrc}
               export SQLITE3_INCLUDE_DIR="${pkgs.sqlite.dev}/include"
               export SQLITE3_LIB_DIR="${pkgs.sqlite.out}/lib"
+              # The linker driver here is Apple clang (`/usr/bin/cc`, used both
+              # for `-sys` build scripts and as rustc's linker), which ignores
+              # `NIX_LDFLAGS` — so `-liconv` (needed by `ring`/`aws-lc-sys` via
+              # reqwest/rustls) fails with `ld: library 'iconv' not found`.
+              # `LIBRARY_PATH` *is* honored by the vanilla clang driver for
+              # `-l` lookup, so export it (Darwin only, mirroring `buildInputs`).
+              ${lib.optionalString pkgs.stdenv.hostPlatform.isDarwin "export LIBRARY_PATH=\"${pkgs.libiconv}/lib\${LIBRARY_PATH:+:$LIBRARY_PATH}\""}
             '';
             # `libiconv` provides `-liconv` needed by `ring`/`aws-lc-sys`
             # (via reqwest/rustls). stdenv already supplies the Apple SDK

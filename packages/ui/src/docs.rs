@@ -366,11 +366,12 @@ mod tests {
         assert_eq!(
             rendered,
             vec![
-                "GET /samples",
-                "POST /samples",
-                "DELETE /samples/{sampleId}",
-                "GET /samples/{sampleId}",
-                "PATCH /samples/{sampleId}",
+                "GET /api",
+                "GET /api/samples",
+                "POST /api/samples",
+                "DELETE /api/samples/{sampleId}",
+                "GET /api/samples/{sampleId}",
+                "PATCH /api/samples/{sampleId}",
             ]
         );
     }
@@ -396,7 +397,7 @@ mod tests {
         let endpoints = parse_endpoints(SPEC).expect("spec parses");
         let list = endpoints
             .iter()
-            .find(|endpoint| endpoint.method == "GET" && endpoint.path == "/samples")
+            .find(|endpoint| endpoint.method == "GET" && endpoint.path == "/api/samples")
             .expect("list exists");
         let params: Vec<(&str, &str)> = list
             .params

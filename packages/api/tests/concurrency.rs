@@ -10,7 +10,7 @@
 
 mod support;
 
-use api::{CreateSampleResponse, GetSamplesServerResponse, SampleApi};
+use api::{CodegenApi, CreateSampleResponse, GetSamplesServerResponse};
 use std::collections::HashSet;
 
 async fn concurrent_creates(

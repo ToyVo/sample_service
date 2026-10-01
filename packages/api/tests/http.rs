@@ -24,9 +24,7 @@ async fn serve(state: AppState) -> (SocketAddr, tokio::task::JoinHandle<()>) {
     // 404s are HTML even without Dioxus SSR. Fullstack (`web`) merges the
     // same routers with `dioxus::server::router` instead: `/api/*` still
     // hits the wildcard (JSON), everything else hits SSR (`NotFound` HTML).
-    let router = api::router_with_telemetry(state)
-        .merge(api::docs_router())
-        .fallback(api::fallback);
+    let router = api::router_with_telemetry(state).fallback(api::fallback);
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
         .await
         .expect("binds ephemeral port");

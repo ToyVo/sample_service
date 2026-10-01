@@ -81,6 +81,3 @@ unimplemented = "deny"
 unreachable = "deny"
 unwrap_used = "deny"
 
-[workspace.metadata.rust-analyzer]
-# Enable features for specific workspace members
-cargo.features = ["api/server", "web/server"]

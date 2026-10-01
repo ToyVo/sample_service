@@ -260,15 +260,15 @@ async fn http_trace_middleware(
 /// Build the API router with [`http_trace_middleware`] applied after routing
 /// (so spans carry the matched route template, not raw paths).
 ///
-/// Unknown `/api/*` paths — including bare `/api` and `/api/` — return a
-/// JSON 404 ([`crate::api_not_found`]) via explicit routes, not via
-/// `fallback`, so the router stays merge-compatible with the Dioxus SSR
-/// fallback (which renders HTML for non-API 404s). Fullstack (`web`)
-/// merges this with `dioxus::server::router` and [`crate::docs_router`]:
-/// `/api*` → JSON, everything else → HTML.
+/// Unknown `/api/*` paths (`/api/`, `/api/{*rest}`) return a JSON 404
+/// ([`crate::api_not_found`]) via explicit routes, not via `fallback`, so
+/// the router stays merge-compatible with the Dioxus SSR fallback (which
+/// renders HTML for non-API 404s). `GET /api` serves the OpenAPI document
+/// (`CodegenApi::serve_spec`); other methods on `/api` fall through to the
+/// codegen router's `405 Method Not Allowed`. Fullstack (`web`) merges this
+/// with `dioxus::server::router`: `/api*` → JSON, everything else → HTML.
 pub fn router_with_telemetry(state: crate::AppState) -> axum::Router {
     crate::codegen_api_router(state)
-        .route("/api", axum::routing::any(crate::api_not_found))
         .route("/api/", axum::routing::any(crate::api_not_found))
         .route("/api/{*rest}", axum::routing::any(crate::api_not_found))
         .route_layer(axum::middleware::from_fn(http_trace_middleware))

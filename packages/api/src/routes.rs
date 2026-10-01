@@ -1,10 +1,4 @@
 #[cfg(feature = "server")]
-use axum::{
-    http::{StatusCode, header},
-    response::IntoResponse,
-};
-
-#[cfg(feature = "server")]
 use crate::models::SampleData;
 #[cfg(feature = "server")]
 use crate::{
@@ -64,14 +58,14 @@ impl CodegenApi for AppState {
             Ok(id) => id,
             Err(err) => {
                 return RemoveSampleServerResponse::NotFound(RemoveSampleResponse404 {
-                    code: Some(String::from("Internal Server Error")),
+                    code: Some(String::from("Not Found")),
                     data: None,
                     errors: vec![err],
                     r#type: Some(String::from(
-                        "https://openapi-to-rust.dev/problems/internal-server-error",
+                        "https://openapi-to-rust.dev/problems/not-found",
                     )),
-                    status: Some(500),
-                    title: Some(String::from("Internal Server Error")),
+                    status: Some(404),
+                    title: Some(String::from("Not Found")),
                 });
             }
         };

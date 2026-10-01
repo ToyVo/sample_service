@@ -14,8 +14,8 @@
 mod support;
 
 use api::{
-    CreateSampleResponse, Error, ErrorCode, GetSampleServerResponse, NewSample,
-    RemoveSampleServerResponse, SampleApi, SampleUpdate, Status, UpdateSampleServerResponse,
+    CodegenApi, CreateSampleResponse, Error, ErrorCode, GetSampleServerResponse, NewSample,
+    RemoveSampleServerResponse, SampleUpdate, Status, UpdateSampleServerResponse,
 };
 
 fn assert_not_found(errors: &[Error], sample_id: &str, backend: &str) {
@@ -26,9 +26,9 @@ fn assert_not_found(errors: &[Error], sample_id: &str, backend: &str) {
     assert_eq!(error.title, "Not Found", "{backend}");
     assert!(
         error
-            .detail
+            .message
             .as_ref()
-            .expect("error has detail")
+            .expect("error has message")
             .contains(sample_id),
         "{backend}: detail mentions the id"
     );

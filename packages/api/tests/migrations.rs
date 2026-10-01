@@ -10,7 +10,7 @@
 
 mod support;
 
-use api::{AppState, ErrorCode, GetSampleServerResponse, GetSamplesServerResponse, SampleApi};
+use api::{AppState, CodegenApi, ErrorCode, GetSampleServerResponse, GetSamplesServerResponse};
 use diesel::Connection;
 
 #[tokio::test]

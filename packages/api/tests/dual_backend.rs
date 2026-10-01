@@ -11,8 +11,8 @@
 #![allow(clippy::unwrap_used)]
 
 use api::{
-    AppState, CreateSampleResponse, GetSampleServerResponse, GetSamplesServerResponse, NewSample,
-    RemoveSampleServerResponse, SampleApi, SampleUpdate, Status, UpdateSampleServerResponse,
+    AppState, CodegenApi, CreateSampleResponse, GetSampleServerResponse, GetSamplesServerResponse,
+    NewSample, RemoveSampleServerResponse, SampleUpdate, Status, UpdateSampleServerResponse,
 };
 use diesel::Connection;
 use diesel::{PgConnection, SqliteConnection};

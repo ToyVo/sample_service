@@ -187,9 +187,8 @@ fn param_values(
 #[component]
 pub fn ApiExplorer() -> Element {
     let endpoints = use_memo(|| parse_endpoints(SPEC).unwrap_or_default());
-    let (init_paths, init_queries, init_body) = endpoints()
-        .first()
-        .map_or_default(endpoint_defaults);
+    let (init_paths, init_queries, init_body) =
+        endpoints().first().map_or_default(endpoint_defaults);
     let mut selected = use_signal(|| 0_usize);
     let mut path_values = use_signal(move || init_paths);
     let mut query_values = use_signal(move || init_queries);
@@ -554,11 +553,12 @@ mod tests {
         assert_eq!(
             rendered,
             vec![
-                "GET /samples",
-                "POST /samples",
-                "DELETE /samples/{sampleId}",
-                "GET /samples/{sampleId}",
-                "PATCH /samples/{sampleId}",
+                "GET /api",
+                "GET /api/samples",
+                "POST /api/samples",
+                "DELETE /api/samples/{sampleId}",
+                "GET /api/samples/{sampleId}",
+                "PATCH /api/samples/{sampleId}",
             ]
         );
     }
