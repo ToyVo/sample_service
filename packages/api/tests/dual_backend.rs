@@ -28,7 +28,9 @@ async fn exercise_backend(state: &AppState) {
     let created_id = created.data.expect("create should return data").id;
 
     // Get.
-    let GetSampleServerResponse::Ok(got) = state.get_sample(created_id.clone()).await;
+    let GetSampleServerResponse::Ok(got) = state.get_sample(created_id.clone()).await else {
+        panic!("expected HTTP 200")
+    };
     assert!(got.errors.is_empty(), "get returned errors");
     assert_eq!(got.data.expect("get should return data").id, created_id);
 
@@ -46,7 +48,10 @@ async fn exercise_backend(state: &AppState) {
         ..Default::default()
     };
     let UpdateSampleServerResponse::Ok(updated) =
-        state.update_sample(created_id.clone(), update).await;
+        state.update_sample(created_id.clone(), update).await
+    else {
+        panic!("expected HTTP 200")
+    };
     assert!(updated.errors.is_empty(), "update returned errors");
     assert_eq!(
         updated.data.expect("update should return data").name,
@@ -54,15 +59,21 @@ async fn exercise_backend(state: &AppState) {
     );
 
     // Delete.
-    let RemoveSampleServerResponse::Ok(removed) = state.remove_sample(created_id.clone()).await;
+    let RemoveSampleServerResponse::Ok(removed) = state.remove_sample(created_id.clone()).await
+    else {
+        panic!("expected HTTP 200")
+    };
     assert!(removed.errors.is_empty(), "delete returned errors");
     assert_eq!(
         removed.data.expect("delete should return data").id,
         created_id
     );
 
-    // Get after delete is a 404-style payload (data None, one NotFound error).
-    let GetSampleServerResponse::Ok(gone) = state.get_sample(created_id).await;
+    // Get after delete is an HTTP 404 with a NotFound error payload
+    // (data None, one error).
+    let GetSampleServerResponse::NotFound(gone) = state.get_sample(created_id).await else {
+        panic!("expected HTTP 404")
+    };
     assert!(gone.data.is_none(), "deleted row should be gone");
     assert_eq!(gone.errors.len(), 1, "expected one NotFound error");
 }

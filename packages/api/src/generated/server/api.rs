@@ -5,9 +5,9 @@
 #[allow(unused_imports)]
 use super::super::types::*;
 use super::errors::*;
-/// Operations under the `sample` tag.
+/// Operations under the `codegen` tag.
 #[async_trait::async_trait]
-pub trait SampleApi: Send + Sync + 'static {
+pub trait CodegenApi: Send + Sync + 'static {
     ///
     ///
     /// `POST /api/samples`
@@ -28,6 +28,10 @@ pub trait SampleApi: Send + Sync + 'static {
     ///
     /// `DELETE /api/samples/{sampleId}`
     async fn remove_sample(&self, sample_id: String) -> RemoveSampleServerResponse;
+    ///
+    ///
+    /// `GET /api`
+    async fn serve_spec(&self) -> ServeSpecServerResponse;
     ///
     ///
     /// `PATCH /api/samples/{sampleId}`

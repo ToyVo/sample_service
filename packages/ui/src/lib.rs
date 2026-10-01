@@ -40,5 +40,11 @@ pub use navbar::Navbar;
 mod docs;
 pub use docs::{Docs, Endpoint, ParamInfo, parse_endpoints};
 
+mod api_explorer;
+pub use api_explorer::ApiExplorer;
+
 mod console;
 pub use console::Console;
+
+mod not_found;
+pub use not_found::NotFound;

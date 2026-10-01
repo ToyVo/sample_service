@@ -26,7 +26,9 @@ async fn unmigrated_database_degrades_to_internal_errors() {
     assert_eq!(error.status, 500);
 
     let missing = uuid::Uuid::now_v7().to_string();
-    let GetSampleServerResponse::Ok(got) = state.get_sample(missing).await;
+    let GetSampleServerResponse::Ok(got) = state.get_sample(missing).await else {
+        panic!("expected HTTP 200")
+    };
     assert!(got.data.is_none());
     assert_eq!(got.errors.len(), 1);
     assert_eq!(got.errors.first().expect("error").status, 500);

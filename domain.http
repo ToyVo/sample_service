@@ -4,6 +4,10 @@
 @revision=1.0.0
 @profile=dev
 ###
+# Serve openapi spec
+GET {{host}}/api
+
+###
 # Gets samples method
 GET {{host}}/api/samples?offset=0&limit=100
 

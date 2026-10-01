@@ -10,11 +10,12 @@ use crate::{Error, ErrorCode};
 pub fn internal_error(detail: String) -> Error {
     Error {
         code: ErrorCode::InternalServerError,
-        detail: Some(detail),
+        message: Some(detail),
         id: uuid::Uuid::now_v7().to_string(),
         status: 500,
         title: "Internal Server Error".to_string(),
         source: None,
+        location: None,
     }
 }
 
@@ -22,11 +23,12 @@ pub fn internal_error(detail: String) -> Error {
 pub fn not_found(sample_id: &str) -> Error {
     Error {
         code: ErrorCode::NotFound,
-        detail: Some(format!("Sample {sample_id} not found")),
+        message: Some(format!("Sample {sample_id} not found")),
         id: uuid::Uuid::now_v7().to_string(),
         status: 404,
         title: "Not Found".to_string(),
         source: None,
+        location: None,
     }
 }
 

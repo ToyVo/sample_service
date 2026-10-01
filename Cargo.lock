@@ -257,7 +257,6 @@ dependencies = [
  "chrono",
  "diesel",
  "diesel_migrations",
- "dioxus",
  "http-body-util",
  "jsonschema",
  "mime",

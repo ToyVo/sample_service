@@ -64,12 +64,25 @@ impl IntoResponse for CreateSampleResponse {
 /// Response for `GET /api/samples/{sampleId}` (operationId `getSample`).
 pub enum GetSampleServerResponse {
     Ok(GetSampleResponse),
+    NotFound(GetSampleResponse404),
 }
 impl IntoResponse for GetSampleServerResponse {
     fn into_response(self) -> ::axum::response::Response {
         match self {
             Self::Ok(body) => {
                 let mut response = (StatusCode::OK, Json(body)).into_response();
+                let Ok(content_type) =
+                    ::axum::http::HeaderValue::from_bytes("application/json".as_bytes())
+                else {
+                    return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+                };
+                response
+                    .headers_mut()
+                    .insert(::axum::http::header::CONTENT_TYPE, content_type);
+                response
+            }
+            Self::NotFound(body) => {
+                let mut response = (StatusCode::NOT_FOUND, Json(body)).into_response();
                 let Ok(content_type) =
                     ::axum::http::HeaderValue::from_bytes("application/json".as_bytes())
                 else {
@@ -108,8 +121,43 @@ impl IntoResponse for GetSamplesServerResponse {
 /// Response for `DELETE /api/samples/{sampleId}` (operationId `removeSample`).
 pub enum RemoveSampleServerResponse {
     Ok(RemoveSampleResponse),
+    NotFound(RemoveSampleResponse404),
 }
 impl IntoResponse for RemoveSampleServerResponse {
+    fn into_response(self) -> ::axum::response::Response {
+        match self {
+            Self::Ok(body) => {
+                let mut response = (StatusCode::OK, Json(body)).into_response();
+                let Ok(content_type) =
+                    ::axum::http::HeaderValue::from_bytes("application/json".as_bytes())
+                else {
+                    return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+                };
+                response
+                    .headers_mut()
+                    .insert(::axum::http::header::CONTENT_TYPE, content_type);
+                response
+            }
+            Self::NotFound(body) => {
+                let mut response = (StatusCode::NOT_FOUND, Json(body)).into_response();
+                let Ok(content_type) =
+                    ::axum::http::HeaderValue::from_bytes("application/json".as_bytes())
+                else {
+                    return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+                };
+                response
+                    .headers_mut()
+                    .insert(::axum::http::header::CONTENT_TYPE, content_type);
+                response
+            }
+        }
+    }
+}
+/// Response for `GET /api` (operationId `serveSpec`).
+pub enum ServeSpecServerResponse {
+    Ok(ServeSpecResponse),
+}
+impl IntoResponse for ServeSpecServerResponse {
     fn into_response(self) -> ::axum::response::Response {
         match self {
             Self::Ok(body) => {
@@ -130,12 +178,25 @@ impl IntoResponse for RemoveSampleServerResponse {
 /// Response for `PATCH /api/samples/{sampleId}` (operationId `updateSample`).
 pub enum UpdateSampleServerResponse {
     Ok(UpdateSampleResponse),
+    NotFound(UpdateSampleResponse404),
 }
 impl IntoResponse for UpdateSampleServerResponse {
     fn into_response(self) -> ::axum::response::Response {
         match self {
             Self::Ok(body) => {
                 let mut response = (StatusCode::OK, Json(body)).into_response();
+                let Ok(content_type) =
+                    ::axum::http::HeaderValue::from_bytes("application/json".as_bytes())
+                else {
+                    return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+                };
+                response
+                    .headers_mut()
+                    .insert(::axum::http::header::CONTENT_TYPE, content_type);
+                response
+            }
+            Self::NotFound(body) => {
+                let mut response = (StatusCode::NOT_FOUND, Json(body)).into_response();
                 let Ok(content_type) =
                     ::axum::http::HeaderValue::from_bytes("application/json".as_bytes())
                 else {

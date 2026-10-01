@@ -7,7 +7,7 @@ reqwest = {default-features = false, workspace = true}
 serde_json = {workspace = true}
 
 [features]
-server = ["api/server"]
+server = ["api/server", "dioxus/fullstack"]
 
 [lints]
 workspace = true

@@ -173,7 +173,7 @@ pub fn Console(docs_target: NavigationTarget) -> Element {
                         "API Docs"
                     }
                     " · Spec: "
-                    a { href: "/openapi.json", "openapi.json" }
+                    a { href: "/api", "api" }
                 }
             }
             CardContent {

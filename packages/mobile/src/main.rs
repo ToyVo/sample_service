@@ -1,19 +1,27 @@
 // `asset!` in const position trips a nightly `volatile_composites` false
-// positive that cannot be addressed in user code.
-#![allow(clippy::volatile_composites)]
+// positive that cannot be addressed in user code. The catch-all 404 route
+// makes the `Routable` derive's no-match branch unreachable (expected).
+#![allow(clippy::volatile_composites, unreachable_code)]
 
 use dioxus::prelude::*;
 
-use ui::{Console, Docs, Navbar, THEME_CSS, components::navbar::NavbarItem};
+use ui::{ApiExplorer, Navbar, NotFound, THEME_CSS, components::navbar::NavbarItem};
 
 #[derive(Debug, Clone, Routable, PartialEq)]
 #[rustfmt::skip]
 enum Route {
     #[layout(MobileNavbar)]
-    #[route("/docs", DocsPage)]
+    #[route("/docs", ApiExplorerPage)]
     Docs {},
-    #[route("/console", ConsolePage)]
+    // Alias for old bookmarks: same unified page as `/docs`.
+    #[route("/console", ApiExplorerPage)]
     Console {},
+    // `"/"` needs an explicit route: the catch-all only matches non-empty
+    // paths (see `web`).
+    #[route("/", RootNotFound)]
+    Root {},
+    #[route("/:..segments", NotFoundPage)]
+    NotFound { segments: Vec<String> },
 }
 
 // Preloaded into base html at compile time to avoid FOUC (Dioxus #3970).
@@ -47,15 +55,9 @@ fn MobileNavbar() -> Element {
         Navbar {
             NavbarItem {
                 index: 0usize,
-                value: "docs".to_string(),
+                value: "api".to_string(),
                 to: Route::Docs {},
-                "API Docs"
-            }
-            NavbarItem {
-                index: 1usize,
-                value: "console".to_string(),
-                to: Route::Console {},
-                "API Console"
+                "API"
             }
         }
 
@@ -63,19 +65,27 @@ fn MobileNavbar() -> Element {
     }
 }
 
-/// Wraps shared `Docs` with the mobile-specific console target, so `ui`
-/// never names this crate's `Route` enum yet `Link` still navigates client-side.
+/// Unified API reference + console (shared `ApiExplorer`); `/console` is an
+/// alias of `/docs` so old links keep working.
 #[component]
-fn DocsPage() -> Element {
+fn ApiExplorerPage() -> Element {
     rsx! {
-        Docs { console_target: Route::Console {}.into() }
+        ApiExplorer {}
     }
 }
 
-/// Wraps shared `Console` with the mobile-specific docs target.
+/// Catch-all 404 page inside the shared navbar layout.
 #[component]
-fn ConsolePage() -> Element {
+fn NotFoundPage(segments: Vec<String>) -> Element {
     rsx! {
-        Console { docs_target: Route::Docs {}.into() }
+        NotFound { segments }
+    }
+}
+
+/// `"/"` renders the same `NotFound` page explicitly (no segments to capture).
+#[component]
+fn RootNotFound() -> Element {
+    rsx! {
+        NotFound { segments: Vec::new() }
     }
 }

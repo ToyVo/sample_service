@@ -102,10 +102,10 @@ fn __decode_get_samples_query(
         .transpose()?;
     Ok(GetSamplesQuery { offset, limit })
 }
-/// Build an axum::Router for the `SampleApi` trait.
-pub fn sample_api_router<T>(api: T) -> ::axum::Router
+/// Build an axum::Router for the `CodegenApi` trait.
+pub fn codegen_api_router<T>(api: T) -> ::axum::Router
 where
-    T: SampleApi + Clone + Send + Sync + 'static,
+    T: CodegenApi + Clone + Send + Sync + 'static,
 {
     ::axum::Router::new()
         .route(
@@ -124,6 +124,7 @@ where
             "/api/samples/{sampleId}",
             ::axum::routing::delete(remove_sample_handler::<T>),
         )
+        .route("/api", ::axum::routing::get(serve_spec_handler::<T>))
         .route(
             "/api/samples/{sampleId}",
             ::axum::routing::patch(update_sample_handler::<T>),
@@ -136,7 +137,7 @@ async fn create_sample_handler<T>(
     __request: ::axum::extract::Request,
 ) -> ::axum::response::Response
 where
-    T: super::api::SampleApi + Clone + Send + Sync + 'static,
+    T: super::api::CodegenApi + Clone + Send + Sync + 'static,
 {
     let body: super::super::types::NewSample =
         match super::validation::decode_json_body::<super::super::types::NewSample>(
@@ -166,7 +167,7 @@ async fn get_sample_handler<T>(
     >,
 ) -> ::axum::response::Response
 where
-    T: super::api::SampleApi + Clone + Send + Sync + 'static,
+    T: super::api::CodegenApi + Clone + Send + Sync + 'static,
 {
     let ::axum::extract::Path(mut __path_values) = match __path_result {
         Ok(path) => path,
@@ -203,7 +204,7 @@ async fn get_samples_handler<T>(
     ::axum::extract::RawQuery(__raw_query): ::axum::extract::RawQuery,
 ) -> ::axum::response::Response
 where
-    T: super::api::SampleApi + Clone + Send + Sync + 'static,
+    T: super::api::CodegenApi + Clone + Send + Sync + 'static,
 {
     let __q: GetSamplesQuery = match __decode_get_samples_query(__raw_query.as_deref()) {
         Ok(query) => query,
@@ -241,7 +242,7 @@ async fn remove_sample_handler<T>(
     >,
 ) -> ::axum::response::Response
 where
-    T: super::api::SampleApi + Clone + Send + Sync + 'static,
+    T: super::api::CodegenApi + Clone + Send + Sync + 'static,
 {
     let ::axum::extract::Path(mut __path_values) = match __path_result {
         Ok(path) => path,
@@ -273,6 +274,14 @@ where
     };
     ::axum::response::IntoResponse::into_response(api.remove_sample(sample_id).await)
 }
+async fn serve_spec_handler<T>(
+    ::axum::extract::State(api): ::axum::extract::State<T>,
+) -> ::axum::response::Response
+where
+    T: super::api::CodegenApi + Clone + Send + Sync + 'static,
+{
+    ::axum::response::IntoResponse::into_response(api.serve_spec().await)
+}
 async fn update_sample_handler<T>(
     ::axum::extract::State(api): ::axum::extract::State<T>,
     __path_result: ::std::result::Result<
@@ -282,7 +291,7 @@ async fn update_sample_handler<T>(
     __request: ::axum::extract::Request,
 ) -> ::axum::response::Response
 where
-    T: super::api::SampleApi + Clone + Send + Sync + 'static,
+    T: super::api::CodegenApi + Clone + Send + Sync + 'static,
 {
     let ::axum::extract::Path(mut __path_values) = match __path_result {
         Ok(path) => path,

@@ -1,10 +1,12 @@
 // `asset!` in const position trips a nightly `volatile_composites` false
-// positive that cannot be addressed in user code.
-#![allow(clippy::volatile_composites)]
+// positive that cannot be addressed in user code. The catch-all 404 route
+// (`/:..segments`) never fails to parse, so the `Routable` derive's
+// no-match branch is unreachable — also expected, silenced here.
+#![allow(clippy::volatile_composites, unreachable_code)]
 
 use dioxus::prelude::*;
 
-use ui::{Console, Docs, Navbar, THEME_CSS, components::navbar::NavbarItem};
+use ui::{ApiExplorer, Navbar, NotFound, THEME_CSS, components::navbar::NavbarItem};
 
 #[cfg(feature = "server")]
 secretspec_derive::declare_secrets!("../../secretspec.toml");
@@ -13,10 +15,18 @@ secretspec_derive::declare_secrets!("../../secretspec.toml");
 #[rustfmt::skip]
 enum Route {
     #[layout(WebNavbar)]
-    #[route("/docs", DocsPage)]
+    #[route("/docs", ApiExplorerPage)]
     Docs {},
-    #[route("/console", ConsolePage)]
+    // Alias for old bookmarks: same unified page as `/docs`.
+    #[route("/console", ApiExplorerPage)]
     Console {},
+    // `"/"` needs an explicit route: the `/:..segments` catch-all only
+    // matches non-empty paths, so without this `"/"` falls through to
+    // the SSR error path (plain-text 404) instead of `NotFound` HTML.
+    #[route("/", RootNotFound)]
+    Root {},
+    #[route("/:..segments", NotFoundPage)]
+    NotFound { segments: Vec<String> },
 }
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
@@ -52,15 +62,9 @@ fn WebNavbar() -> Element {
         Navbar {
             NavbarItem {
                 index: 0usize,
-                value: "docs".to_string(),
+                value: "api".to_string(),
                 to: Route::Docs {},
-                "API Docs"
-            }
-            NavbarItem {
-                index: 1usize,
-                value: "console".to_string(),
-                to: Route::Console {},
-                "API Console"
+                "API"
             }
         }
 
@@ -68,20 +72,31 @@ fn WebNavbar() -> Element {
     }
 }
 
-/// Wraps shared `Docs` with the web-specific console target, so `ui` never
-/// names this crate's `Route` enum yet `Link` still navigates client-side.
+/// Unified API reference + console (shared `ApiExplorer`); `/console` is an
+/// alias of `/docs` so old links keep working.
 #[component]
-fn DocsPage() -> Element {
+fn ApiExplorerPage() -> Element {
     rsx! {
-        Docs { console_target: Route::Console {}.into() }
+        ApiExplorer {}
     }
 }
 
-/// Wraps shared `Console` with the web-specific docs target.
+/// Catch-all 404 page inside the shared navbar layout, so unknown URLs get
+/// HTML (with a 404 status via `FullstackContext`) instead of plain text.
+/// Unknown `/api*` never reaches here — the API router returns JSON.
 #[component]
-fn ConsolePage() -> Element {
+fn NotFoundPage(segments: Vec<String>) -> Element {
     rsx! {
-        Console { docs_target: Route::Docs {}.into() }
+        NotFound { segments }
+    }
+}
+
+/// `"/"` has no segments for the catch-all to capture, so it renders the
+/// same `NotFound` HTML explicitly (empty path → displays as `/`).
+#[component]
+fn RootNotFound() -> Element {
+    rsx! {
+        NotFound { segments: Vec::new() }
     }
 }
 
@@ -105,12 +120,14 @@ fn main() {
 
             // Create a new router for our app using the `router` function
             let router = dioxus::server::router(App);
-            let openapi = api::router_with_telemetry(state);
+            // JSON 404s for unknown `/api/*` (wildcard), HTML 404s for
+            // everything else via the Dioxus SSR fallback (`NotFound` page).
+            let api_router = api::router_with_telemetry(state);
 
             // .. customize the router, adding layers and new routes
 
             // And then return the router
-            Ok(router.merge(openapi))
+            Ok(router.merge(api_router))
         });
     }
 

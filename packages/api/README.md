@@ -1,18 +1,21 @@
 # API
 
-This crate contains all shared fullstack server functions. This is a great place to place any server-only logic you would like to expose in multiple platforms like a method that accesses your database or a method that sends an email.
+This crate contains the shared backend: storage, Axum routers, and
+observability. It has no Dioxus dependency — the frontend lives in `ui`
+plus the `web` / `desktop` / `mobile` shells.
 
 ## Backend modules (all `server`-gated)
 
 - `state` — `AppState` (a single boxed storage abstraction) plus
   `DATABASE_URL` routing.
-- `routes` — the `SampleApi` implementation and shared server functions.
+- `routes` — the `CodegenApi` implementation.
+- `fallback` — transport 404s: JSON for `/api*`, HTML otherwise.
 - `store` — backend-agnostic CRUD over the `SampleConnection` trait.
 - `models` / `schemas` — Diesel row types and table definitions for SQLite
   and Postgres.
 - `generated` — OpenAPI-generated types, client, and axum server
   (regenerate with `cgs regen` from the repo root).
-- `docs` — `GET /openapi.json` serving the embedded spec. The interactive
+- `docs` — `GET /api` serving the embedded spec. The interactive
   console and `/docs` reference page are Dioxus routes in the `web` crate
   (`views/console.rs`, `views/docs.rs`), rendered from that same spec.
 - `telemetry` — OpenTelemetry traces, metrics, and logs (see below).
@@ -42,12 +45,10 @@ Configuration is environmental: `OTEL_EXPORTER_OTLP_ENDPOINT`
 and `OTEL_SDK_DISABLED=true` to run without telemetry. A missing collector
 only costs telemetry data, never requests.
 
-This crate will be built twice:
-
-1. Once for the server build with the `dioxus/server` feature enabled
-2. Once for the client build with the client feature disabled
-
-During the server build, the server functions will be collected and hosted on a public API for the client to call. During the client build, the server functions will be compiled into the client build.
+This crate is `server`-gated: non-server builds only get the spec
+constant and (generated) types, while all storage, routing, and
+telemetry stay behind the `server` feature so WASM clients never compile
+them.
 
 ## Dependencies
 

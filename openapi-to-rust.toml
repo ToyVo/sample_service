@@ -2,7 +2,7 @@
 
 [client]
 operations = [
-  "tag:sample"
+  "tag:codegen"
 ]
 prune_models = true
 
@@ -31,6 +31,6 @@ enabled = false
 [server]
 framework = "axum"
 operations = [
-  "tag:sample"
+  "tag:codegen"
 ]
 prune_models = true

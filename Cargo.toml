@@ -5,13 +5,13 @@ inherits = "dev"
 inherits = "dev"
 
 [profile.wasm-dev]
-inherits = "dev"
-opt-level = 1
 # No DWARF: nightly rustc emits a DWARF version nixpkgs wasm-opt can't parse
 # (SIGABRT in DWARFEmitter) — even line tables crash it. dx forces
 # `strip=false`, so this `debug=false` is what keeps debug sections out.
 # Use `--keep-names` on dx for readable panic names without DWARF.
 debug = false
+inherits = "dev"
+opt-level = 1
 
 [workspace]
 members = [
@@ -80,3 +80,7 @@ unchecked_time_subtraction = "deny"
 unimplemented = "deny"
 unreachable = "deny"
 unwrap_used = "deny"
+
+[workspace.metadata.rust-analyzer]
+# Enable features for specific workspace members
+cargo.features = ["api/server", "web/server"]

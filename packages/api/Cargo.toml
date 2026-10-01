@@ -4,7 +4,6 @@ axum = {features = ["http1", "json", "query", "tokio", "tracing"], optional = tr
 chrono = {features = ["serde"], optional = true, workspace = true}
 diesel = {features = ["chrono", "postgres", "returning_clauses_for_sqlite_3_35", "sqlite"], optional = true, workspace = true}
 diesel_migrations = {optional = true, workspace = true}
-dioxus = {features = ["fullstack"], workspace = true}
 http-body-util = {optional = true, workspace = true}
 jsonschema = {default-features = false, optional = true, workspace = true}
 mime = {optional = true, workspace = true}
@@ -52,8 +51,7 @@ server = [
   "dep:tracing-opentelemetry",
   "dep:tracing-subscriber",
   "dep:url",
-  "dep:uuid",
-  "dioxus/server"
+  "dep:uuid"
 ]
 
 [lints]

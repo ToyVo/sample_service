@@ -1,8 +1,13 @@
-//! This crate contains all shared fullstack server functions.
+//! This crate contains the shared API: generated types, storage backends,
+//! Axum routers, and observability.
 #[cfg(feature = "server")]
 pub mod generated;
 #[cfg(feature = "server")]
 pub use generated::*;
+#[cfg(feature = "server")]
+pub mod fallback;
+#[cfg(feature = "server")]
+pub use fallback::*;
 #[cfg(feature = "server")]
 pub mod models;
 pub mod routes;

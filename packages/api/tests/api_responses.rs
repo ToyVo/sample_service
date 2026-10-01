@@ -2,9 +2,10 @@
 //!
 //! Each case runs against SQLite always and an isolated Postgres database
 //! when a server is reachable. The suite locks in the API contract: success
-//! payloads carry `data` with empty `errors`, while missing/invalid ids
-//! return `data: None` with exactly one `NOT_FOUND` error (still HTTP 200 at
-//! the transport layer — see `tests/http.rs`).
+//! payloads carry `data` with empty `errors` (HTTP 200/201), while
+//! missing/invalid ids return `data: None` with exactly one `NOT_FOUND`
+//! error and an HTTP 404 transport status — see `tests/http.rs` for the
+//! over-the-wire assertions.
 
 #![allow(clippy::expect_used)]
 #![allow(clippy::panic)]
@@ -116,7 +117,11 @@ async fn get_rejects_malformed_ids() {
             "gggggggg-gggg-gggg-gggg-gggggggggggg",
             "0196a8e0-9e6f-7c9e-8000-000000000000-extra",
         ] {
-            let GetSampleServerResponse::Ok(body) = state.get_sample(bad_id.to_string()).await;
+            let GetSampleServerResponse::NotFound(body) =
+                state.get_sample(bad_id.to_string()).await
+            else {
+                panic!("{backend}: expected HTTP 404")
+            };
             assert!(body.data.is_none(), "{backend}: no data for {bad_id:?}");
             assert_not_found(&body.errors, bad_id, backend);
         }
@@ -128,7 +133,10 @@ async fn get_missing_uuid_returns_404_payload() {
     crate::on_both_backends!("api_missing", |state| {
         let backend = state.backend_name();
         let missing = uuid::Uuid::now_v7().to_string();
-        let GetSampleServerResponse::Ok(body) = state.get_sample(missing.clone()).await;
+        let GetSampleServerResponse::NotFound(body) = state.get_sample(missing.clone()).await
+        else {
+            panic!("{backend}: expected HTTP 404")
+        };
         assert!(body.data.is_none(), "{backend}: no data");
         assert_not_found(&body.errors, &missing, backend);
     });
@@ -139,7 +147,7 @@ async fn update_missing_and_malformed_return_404() {
     crate::on_both_backends!("api_upd_404", |state| {
         let backend = state.backend_name();
         let missing = uuid::Uuid::now_v7().to_string();
-        let UpdateSampleServerResponse::Ok(body) = state
+        let UpdateSampleServerResponse::NotFound(body) = state
             .update_sample(
                 missing.clone(),
                 SampleUpdate {
@@ -147,11 +155,14 @@ async fn update_missing_and_malformed_return_404() {
                     ..Default::default()
                 },
             )
-            .await;
+            .await
+        else {
+            panic!("{backend}: expected HTTP 404")
+        };
         assert!(body.data.is_none(), "{backend}: no data");
         assert_not_found(&body.errors, &missing, backend);
 
-        let UpdateSampleServerResponse::Ok(bad) = state
+        let UpdateSampleServerResponse::NotFound(bad) = state
             .update_sample(
                 "junk".to_string(),
                 SampleUpdate {
@@ -159,7 +170,10 @@ async fn update_missing_and_malformed_return_404() {
                     ..Default::default()
                 },
             )
-            .await;
+            .await
+        else {
+            panic!("{backend}: expected HTTP 404")
+        };
         assert!(bad.data.is_none(), "{backend}: no data");
         assert_not_found(&bad.errors, "junk", backend);
     });
@@ -170,11 +184,17 @@ async fn remove_missing_and_malformed_return_404() {
     crate::on_both_backends!("api_del_404", |state| {
         let backend = state.backend_name();
         let missing = uuid::Uuid::now_v7().to_string();
-        let RemoveSampleServerResponse::Ok(body) = state.remove_sample(missing.clone()).await;
+        let RemoveSampleServerResponse::NotFound(body) = state.remove_sample(missing.clone()).await
+        else {
+            panic!("{backend}: expected HTTP 404")
+        };
         assert!(body.data.is_none(), "{backend}: no data");
         assert_not_found(&body.errors, &missing, backend);
 
-        let RemoveSampleServerResponse::Ok(bad) = state.remove_sample(String::new()).await;
+        let RemoveSampleServerResponse::NotFound(bad) = state.remove_sample(String::new()).await
+        else {
+            panic!("{backend}: expected HTTP 404")
+        };
         assert!(bad.data.is_none(), "{backend}: no data");
         assert_not_found(&bad.errors, "", backend);
     });
@@ -185,14 +205,21 @@ async fn double_remove_second_is_404() {
     crate::on_both_backends!("api_double_del", |state| {
         let backend = state.backend_name();
         let created = create_named(state, "twice", backend).await;
-        let RemoveSampleServerResponse::Ok(first) = state.remove_sample(created.id.clone()).await;
+        let RemoveSampleServerResponse::Ok(first) = state.remove_sample(created.id.clone()).await
+        else {
+            panic!("{backend}: expected HTTP 200")
+        };
         assert!(first.errors.is_empty(), "{backend}: no errors");
         assert_eq!(
             first.data.expect("deleted row returned").id,
             created.id,
             "{backend}"
         );
-        let RemoveSampleServerResponse::Ok(second) = state.remove_sample(created.id.clone()).await;
+        let RemoveSampleServerResponse::NotFound(second) =
+            state.remove_sample(created.id.clone()).await
+        else {
+            panic!("{backend}: expected HTTP 404")
+        };
         assert!(second.data.is_none(), "{backend}: already gone");
         assert_not_found(&second.errors, &created.id, backend);
     });
@@ -203,7 +230,10 @@ async fn remove_returns_the_deleted_row() {
     crate::on_both_backends!("api_del_row", |state| {
         let backend = state.backend_name();
         let created = create_named(state, "doomed", backend).await;
-        let RemoveSampleServerResponse::Ok(removed) = state.remove_sample(created.id.clone()).await;
+        let RemoveSampleServerResponse::Ok(removed) = state.remove_sample(created.id.clone()).await
+        else {
+            panic!("{backend}: expected HTTP 200")
+        };
         let row = removed.data.expect("deleted row returned");
         assert_eq!(row.id, created.id, "{backend}");
         assert_eq!(row.name, "doomed", "{backend}");
@@ -218,7 +248,10 @@ async fn update_empty_body_preserves_row_and_stamps() {
         let created = create_named(state, "stable", backend).await;
         let UpdateSampleServerResponse::Ok(updated) = state
             .update_sample(created.id.clone(), SampleUpdate::default())
-            .await;
+            .await
+        else {
+            panic!("{backend}: expected HTTP 200")
+        };
         assert!(updated.errors.is_empty(), "{backend}: no errors");
         let row = updated.data.expect("updated row returned");
         assert_eq!(row.id, created.id, "{backend}");
@@ -248,7 +281,10 @@ async fn update_replaces_all_mutable_fields() {
                     image_uri: Some("https://example.com/changed.png".to_string()),
                 },
             )
-            .await;
+            .await
+        else {
+            panic!("{backend}: expected HTTP 200")
+        };
         assert!(updated.errors.is_empty(), "{backend}: no errors");
         let row = updated.data.expect("updated row returned");
         assert_eq!(row.name, "changed", "{backend}");
@@ -266,7 +302,10 @@ async fn update_replaces_all_mutable_fields() {
             "{backend}"
         );
         // A follow-up read sees the same values (update is durable).
-        let GetSampleServerResponse::Ok(refetched) = state.get_sample(created.id.clone()).await;
+        let GetSampleServerResponse::Ok(refetched) = state.get_sample(created.id.clone()).await
+        else {
+            panic!("{backend}: expected HTTP 200")
+        };
         let reread = refetched.data.expect("row persisted");
         assert_eq!(reread.name, "changed", "{backend}");
         assert_eq!(reread.status, Status::Archived, "{backend}");
@@ -287,7 +326,10 @@ async fn updated_at_never_predates_created_at() {
                     ..Default::default()
                 },
             )
-            .await;
+            .await
+        else {
+            panic!("{backend}: expected HTTP 200")
+        };
         let row = updated.data.expect("updated row returned");
         let stamped = row.updated_at.expect("stamped after update");
         assert!(stamped >= row.created_at, "{backend}: monotonic stamps");
@@ -301,8 +343,13 @@ async fn error_ids_are_unique_valid_uuids() {
         let backend = state.backend_name();
         let first_missing = uuid::Uuid::now_v7().to_string();
         let second_missing = uuid::Uuid::now_v7().to_string();
-        let GetSampleServerResponse::Ok(first) = state.get_sample(first_missing).await;
-        let GetSampleServerResponse::Ok(second) = state.get_sample(second_missing).await;
+        let GetSampleServerResponse::NotFound(first) = state.get_sample(first_missing).await else {
+            panic!("{backend}: expected HTTP 404")
+        };
+        let GetSampleServerResponse::NotFound(second) = state.get_sample(second_missing).await
+        else {
+            panic!("{backend}: expected HTTP 404")
+        };
         let first_id = first.errors.first().expect("error").id.clone();
         let second_id = second.errors.first().expect("error").id.clone();
         uuid::Uuid::parse_str(&first_id).expect("valid uuid");

@@ -104,43 +104,163 @@ impl NewSampleBuilder {
 }
 ///A response that contains a single sample
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct UpdateSampleResponse {
+pub struct UpdateSampleResponse404 {
+    ///The HTTP status code applicable as a description string.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub data: Option<Sample>,
     ///Any errors produced during method execution
     pub errors: Vec<Error>,
+    ///The HTTP status code applicable.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<i64>,
+    ///A short, human-readable summary that SHOULD NOT change from occurrence to occurrence, except for purposes of localization.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    ///The HTTP status code applicable as a description string.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub r#type: Option<String>,
+}
+///A response that contains a single sample
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct UpdateSampleResponse {
+    ///The HTTP status code applicable as a description string.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub data: Option<Sample>,
+    ///Any errors produced during method execution
+    pub errors: Vec<Error>,
+    ///The HTTP status code applicable.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<i64>,
+    ///A short, human-readable summary that SHOULD NOT change from occurrence to occurrence, except for purposes of localization.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    ///The HTTP status code applicable as a description string.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub r#type: Option<String>,
+}
+///A response that contains a single sample
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct RemoveSampleResponse404 {
+    ///The HTTP status code applicable as a description string.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub data: Option<Sample>,
+    ///Any errors produced during method execution
+    pub errors: Vec<Error>,
+    ///The HTTP status code applicable.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<i64>,
+    ///A short, human-readable summary that SHOULD NOT change from occurrence to occurrence, except for purposes of localization.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    ///The HTTP status code applicable as a description string.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub r#type: Option<String>,
 }
 ///A response that contains a single sample
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct RemoveSampleResponse {
+    ///The HTTP status code applicable as a description string.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub data: Option<Sample>,
     ///Any errors produced during method execution
     pub errors: Vec<Error>,
+    ///The HTTP status code applicable.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<i64>,
+    ///A short, human-readable summary that SHOULD NOT change from occurrence to occurrence, except for purposes of localization.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    ///The HTTP status code applicable as a description string.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub r#type: Option<String>,
 }
 ///A response that contains a single sample
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct GetSamplesResponse {
+    ///The HTTP status code applicable as a description string.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
     ///Any errors produced during method execution
     pub data: Vec<Sample>,
     ///Any errors produced during method execution
     pub errors: Vec<Error>,
+    ///The HTTP status code applicable.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<i64>,
+    ///A short, human-readable summary that SHOULD NOT change from occurrence to occurrence, except for purposes of localization.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    ///The HTTP status code applicable as a description string.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub r#type: Option<String>,
+}
+///A response that contains a single sample
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct GetSampleResponse404 {
+    ///The HTTP status code applicable as a description string.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub data: Option<Sample>,
+    ///Any errors produced during method execution
+    pub errors: Vec<Error>,
+    ///The HTTP status code applicable.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<i64>,
+    ///A short, human-readable summary that SHOULD NOT change from occurrence to occurrence, except for purposes of localization.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    ///The HTTP status code applicable as a description string.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub r#type: Option<String>,
 }
 ///A response that contains a single sample
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct GetSampleResponse {
+    ///The HTTP status code applicable as a description string.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub data: Option<Sample>,
     ///Any errors produced during method execution
     pub errors: Vec<Error>,
+    ///The HTTP status code applicable.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<i64>,
+    ///A short, human-readable summary that SHOULD NOT change from occurrence to occurrence, except for purposes of localization.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    ///The HTTP status code applicable as a description string.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub r#type: Option<String>,
 }
 ///A response that contains a single sample
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct CreateSampleResponse201 {
+    ///The HTTP status code applicable as a description string.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub data: Option<Sample>,
     ///Any errors produced during method execution
     pub errors: Vec<Error>,
+    ///The HTTP status code applicable.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<i64>,
+    ///A short, human-readable summary that SHOULD NOT change from occurrence to occurrence, except for purposes of localization.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    ///The HTTP status code applicable as a description string.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub r#type: Option<String>,
 }
 ///A sample entity representing a generic resource
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -208,11 +328,14 @@ impl AsRef<str> for Status {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Error {
     pub code: ErrorCode,
-    ///a human-readable explanation specific to this occurrence of the problem. Like `title`, this field’s value can be localized.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub detail: Option<String>,
     ///A unique identifier for this particular occurrence of the problem.
     pub id: String,
+    ///where this occured, example the path of the route responding or function
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    ///a human-readable explanation specific to this occurrence of the problem. Like `title`, this field’s value can be localized.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
     ///An object containing references to the source of the error
     #[serde(skip_serializing_if = "Option::is_none")]
     pub source: Option<ErrorSource>,
@@ -275,4 +398,11 @@ impl AsRef<str> for ErrorCode {
     fn as_ref(&self) -> &str {
         self.as_str()
     }
+}
+///A response that contains openapi json
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+pub struct ServeSpecResponse {
+    /// Additional properties not explicitly defined in the schema
+    #[serde(flatten)]
+    pub additional_properties: std::collections::BTreeMap<String, serde_json::Value>,
 }

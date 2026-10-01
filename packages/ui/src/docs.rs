@@ -10,7 +10,7 @@ use crate::components::{
 };
 
 // The OpenAPI document, embedded at compile time (same file the axum
-// `/openapi.json` route and codegen read). The reference below renders from
+// `/api` route and codegen read). The reference below renders from
 // this data, so no reflection or runtime fetching is involved.
 const SPEC: &str = include_str!("../../../domain.oas3.json");
 
@@ -271,7 +271,7 @@ pub fn Docs(console_target: NavigationTarget) -> Element {
                     CardTitle { "API reference" }
                     CardDescription {
                         "Rendered from the embedded OpenAPI document. "
-                        a { href: "/openapi.json", "Raw spec" }
+                        a { href: "/api", "Raw spec" }
                         " · "
                         Link {
                             to: console_target,

@@ -1,34 +1,23 @@
-use dioxus::prelude::*;
-use dioxus_fullstack::{
-    response::{IntoResponse, Response},
-    http::{header, StatusCode}
+#[cfg(feature = "server")]
+use axum::{
+    http::{StatusCode, header},
+    response::IntoResponse,
 };
 
 #[cfg(feature = "server")]
 use crate::models::SampleData;
 #[cfg(feature = "server")]
 use crate::{
-    AppState, CreateSampleResponse, CreateSampleResponse201, GetSampleResponse,
-    GetSampleServerResponse, GetSamplesResponse, GetSamplesServerResponse, NewSample,
-    RemoveSampleResponse, RemoveSampleServerResponse, SampleApi, SampleUpdate,
-    UpdateSampleResponse, UpdateSampleServerResponse, internal_error, lock_db, not_found, parse_id,
+    AppState, CodegenApi, CreateSampleResponse, CreateSampleResponse201, GetSampleResponse,
+    GetSampleResponse404, GetSampleServerResponse, GetSamplesResponse, GetSamplesServerResponse,
+    NewSample, RemoveSampleResponse, RemoveSampleResponse404, RemoveSampleServerResponse,
+    SampleUpdate, ServeSpecResponse, ServeSpecServerResponse, UpdateSampleResponse,
+    UpdateSampleResponse404, UpdateSampleServerResponse, internal_error, lock_db, not_found,
+    parse_id,
 };
 
 /// The `OpenAPI` document, embedded at compile time.
 pub const SPEC_JSON: &str = include_str!("../../../domain.oas3.json");
-
-// `async` is required by `#[get]` even though this body needs no `.await`.
-#[allow(clippy::unused_async)]
-#[get("/api")]
-pub async fn oas3() -> Result<Response, ServerFnError> {
-    let response = (
-        StatusCode::OK,
-        [(header::CONTENT_TYPE, "application/json")],
-        SPEC_JSON, // Serves the raw unescaped string directly
-    ).into_response();
-
-    Ok(response)
-}
 
 // ---------------------------------------------------------------------------
 // `SampleApi`: each method locks the connection, calls the single
@@ -39,17 +28,33 @@ pub async fn oas3() -> Result<Response, ServerFnError> {
 
 #[cfg(feature = "server")]
 #[async_trait::async_trait]
-impl SampleApi for AppState {
+impl CodegenApi for AppState {
+    async fn serve_spec(&self) -> ServeSpecServerResponse {
+        ServeSpecServerResponse::Ok(ServeSpecResponse {
+            additional_properties: serde_json::from_str(SPEC_JSON).unwrap_or_default(),
+        })
+    }
+
     async fn create_sample(&self, body: NewSample) -> CreateSampleResponse {
         let mut conn = lock_db(&self.db);
         match crate::store::create_sample(&mut *conn, body) {
             Ok(data) => CreateSampleResponse::Created(CreateSampleResponse201 {
+                code: Some(String::from("Created")),
                 data: Some(data.to_api()),
                 errors: Vec::new(),
+                r#type: Some(String::from("https://openapi-to-rust.dev/problems/created")),
+                status: Some(201),
+                title: Some(String::from("Created")),
             }),
             Err(detail) => CreateSampleResponse::Created(CreateSampleResponse201 {
+                code: Some(String::from("Internal Server Error")),
                 data: None,
                 errors: vec![internal_error(detail)],
+                r#type: Some(String::from(
+                    "https://openapi-to-rust.dev/problems/internal-server-error",
+                )),
+                status: Some(500),
+                title: Some(String::from("Internal Server Error")),
             }),
         }
     }
@@ -58,25 +63,47 @@ impl SampleApi for AppState {
         let db_id = match parse_id(&sample_id) {
             Ok(id) => id,
             Err(err) => {
-                return RemoveSampleServerResponse::Ok(RemoveSampleResponse {
+                return RemoveSampleServerResponse::NotFound(RemoveSampleResponse404 {
+                    code: Some(String::from("Internal Server Error")),
                     data: None,
                     errors: vec![err],
+                    r#type: Some(String::from(
+                        "https://openapi-to-rust.dev/problems/internal-server-error",
+                    )),
+                    status: Some(500),
+                    title: Some(String::from("Internal Server Error")),
                 });
             }
         };
         let mut conn = lock_db(&self.db);
         match crate::store::remove_sample(&mut *conn, db_id) {
             Ok(Some(data)) => RemoveSampleServerResponse::Ok(RemoveSampleResponse {
+                code: Some(String::from("Ok")),
                 data: Some(data.to_api()),
                 errors: Vec::new(),
+                r#type: Some(String::from("https://openapi-to-rust.dev/problems/ok")),
+                status: Some(200),
+                title: Some(String::from("Ok")),
             }),
-            Ok(None) => RemoveSampleServerResponse::Ok(RemoveSampleResponse {
+            Ok(None) => RemoveSampleServerResponse::NotFound(RemoveSampleResponse404 {
+                code: Some(String::from("Not Found")),
                 data: None,
                 errors: vec![not_found(&sample_id)],
+                r#type: Some(String::from(
+                    "https://openapi-to-rust.dev/problems/not-found",
+                )),
+                status: Some(404),
+                title: Some(String::from("Not Found")),
             }),
             Err(detail) => RemoveSampleServerResponse::Ok(RemoveSampleResponse {
+                code: Some(String::from("Internal Server Error")),
                 data: None,
                 errors: vec![internal_error(detail)],
+                r#type: Some(String::from(
+                    "https://openapi-to-rust.dev/problems/internal-server-error",
+                )),
+                status: Some(500),
+                title: Some(String::from("Internal Server Error")),
             }),
         }
     }
@@ -89,25 +116,47 @@ impl SampleApi for AppState {
         let db_id = match parse_id(&sample_id) {
             Ok(id) => id,
             Err(err) => {
-                return UpdateSampleServerResponse::Ok(UpdateSampleResponse {
+                return UpdateSampleServerResponse::NotFound(UpdateSampleResponse404 {
+                    code: Some(String::from("Not Found")),
                     data: None,
                     errors: vec![err],
+                    r#type: Some(String::from(
+                        "https://openapi-to-rust.dev/problems/not-found",
+                    )),
+                    status: Some(404),
+                    title: Some(String::from("Not Found")),
                 });
             }
         };
         let mut conn = lock_db(&self.db);
         match crate::store::update_sample(&mut *conn, db_id, body) {
             Ok(Some(data)) => UpdateSampleServerResponse::Ok(UpdateSampleResponse {
+                code: Some(String::from("Ok")),
                 data: Some(data.to_api()),
                 errors: Vec::new(),
+                r#type: Some(String::from("https://openapi-to-rust.dev/problems/ok")),
+                status: Some(200),
+                title: Some(String::from("Ok")),
             }),
-            Ok(None) => UpdateSampleServerResponse::Ok(UpdateSampleResponse {
+            Ok(None) => UpdateSampleServerResponse::NotFound(UpdateSampleResponse404 {
+                code: Some(String::from("Not Found")),
                 data: None,
                 errors: vec![not_found(&sample_id)],
+                r#type: Some(String::from(
+                    "https://openapi-to-rust.dev/problems/not-found",
+                )),
+                status: Some(404),
+                title: Some(String::from("Not Found")),
             }),
             Err(detail) => UpdateSampleServerResponse::Ok(UpdateSampleResponse {
+                code: Some(String::from("Internal Server Error")),
                 data: None,
                 errors: vec![internal_error(detail)],
+                r#type: Some(String::from(
+                    "https://openapi-to-rust.dev/problems/internal-server-error",
+                )),
+                status: Some(500),
+                title: Some(String::from("Internal Server Error")),
             }),
         }
     }
@@ -116,25 +165,47 @@ impl SampleApi for AppState {
         let db_id = match parse_id(&sample_id) {
             Ok(id) => id,
             Err(err) => {
-                return GetSampleServerResponse::Ok(GetSampleResponse {
+                return GetSampleServerResponse::NotFound(GetSampleResponse404 {
+                    code: Some(String::from("Not Found")),
                     data: None,
                     errors: vec![err],
+                    r#type: Some(String::from(
+                        "https://openapi-to-rust.dev/problems/not-found",
+                    )),
+                    status: Some(404),
+                    title: Some(String::from("Not Found")),
                 });
             }
         };
         let mut conn = lock_db(&self.db);
         match crate::store::get_sample(&mut *conn, db_id) {
             Ok(Some(data)) => GetSampleServerResponse::Ok(GetSampleResponse {
+                code: Some(String::from("Ok")),
                 data: Some(data.to_api()),
                 errors: Vec::new(),
+                r#type: Some(String::from("https://openapi-to-rust.dev/problems/ok")),
+                status: Some(200),
+                title: Some(String::from("Ok")),
             }),
-            Ok(None) => GetSampleServerResponse::Ok(GetSampleResponse {
+            Ok(None) => GetSampleServerResponse::NotFound(GetSampleResponse404 {
+                code: Some(String::from("Not Found")),
                 data: None,
                 errors: vec![not_found(&sample_id)],
+                r#type: Some(String::from(
+                    "https://openapi-to-rust.dev/problems/not-found",
+                )),
+                status: Some(404),
+                title: Some(String::from("Not Found")),
             }),
             Err(detail) => GetSampleServerResponse::Ok(GetSampleResponse {
+                code: Some(String::from("Internal Server Error")),
                 data: None,
                 errors: vec![internal_error(detail)],
+                r#type: Some(String::from(
+                    "https://openapi-to-rust.dev/problems/internal-server-error",
+                )),
+                status: Some(500),
+                title: Some(String::from("Internal Server Error")),
             }),
         }
     }
@@ -151,13 +222,23 @@ impl SampleApi for AppState {
             Ok(rows) => {
                 let data = rows.into_iter().map(SampleData::to_api).collect();
                 GetSamplesServerResponse::Ok(GetSamplesResponse {
+                    code: Some(String::from("Ok")),
                     data,
                     errors: Vec::new(),
+                    r#type: Some(String::from("https://openapi-to-rust.dev/problems/ok")),
+                    status: Some(200),
+                    title: Some(String::from("Ok")),
                 })
             }
             Err(detail) => GetSamplesServerResponse::Ok(GetSamplesResponse {
+                code: Some(String::from("Internal Server Error")),
                 data: Vec::new(),
                 errors: vec![internal_error(detail)],
+                r#type: Some(String::from(
+                    "https://openapi-to-rust.dev/problems/internal-server-error",
+                )),
+                status: Some(500),
+                title: Some(String::from("Internal Server Error")),
             }),
         }
     }

@@ -6,11 +6,32 @@
     "description": "Example service definition to demonstrate the features of OpenAPI"
   },
   "paths": {
+    "/api": {
+      "get": {
+        "operationId": "serveSpec",
+        "description": "Serve openapi spec",
+        "tags": ["codegen"],
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "A response that contains openapi json",
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/samples": {
       "get": {
         "operationId": "getSamples",
         "description": "Gets samples method",
-        "tags": ["sample"],
+        "tags": ["codegen"],
         "parameters": [
           { "$ref": "#/components/parameters/offset" },
           { "$ref": "#/components/parameters/limit" }
@@ -22,7 +43,7 @@
       "post": {
         "operationId": "createSample",
         "description": "Creates a sample",
-        "tags": ["sample"],
+        "tags": ["codegen"],
         "requestBody": {
           "description": "The new sample",
           "required": true,
@@ -64,15 +85,16 @@
       "get": {
         "operationId": "getSample",
         "description": "Gets a sample",
-        "tags": ["sample"],
+        "tags": ["codegen"],
         "responses": {
-          "200": { "$ref": "#/components/responses/sample" }
+          "200": { "$ref": "#/components/responses/sample" },
+          "404": { "$ref": "#/components/responses/sample" }
         }
       },
       "patch": {
         "operationId": "updateSample",
         "description": "Updates a sample",
-        "tags": ["sample"],
+        "tags": ["codegen"],
         "requestBody": {
           "description": "The sample update",
           "required": true,
@@ -92,15 +114,17 @@
           }
         },
         "responses": {
-          "200": { "$ref": "#/components/responses/sample" }
+          "200": { "$ref": "#/components/responses/sample" },
+          "404": { "$ref": "#/components/responses/sample" }
         }
       },
       "delete": {
         "operationId": "removeSample",
         "description": "Removes a sample",
-        "tags": ["sample"],
+        "tags": ["codegen"],
         "responses": {
-          "200": { "$ref": "#/components/responses/sample" }
+          "200": { "$ref": "#/components/responses/sample" },
+          "404": { "$ref": "#/components/responses/sample" }
         }
       }
     }
@@ -144,6 +168,22 @@
                 "data": {
                   "$ref": "#/components/schemas/sample"
                 },
+                "type": {
+                  "description": "The HTTP status code applicable as a description string.",
+                  "type": "string"
+                },
+                "code": {
+                  "description": "The HTTP status code applicable as a description string.",
+                  "type": "string"
+                },
+                "status": {
+                  "description": "The HTTP status code applicable.",
+                  "type": "integer"
+                },
+                "title": {
+                  "description": "A short, human-readable summary that SHOULD NOT change from occurrence to occurrence, except for purposes of localization.",
+                  "type": "string"
+                },
                 "errors": {
                   "type": "array",
                   "description": "Any errors produced during method execution",
@@ -171,6 +211,22 @@
                   "items": {
                     "$ref": "#/components/schemas/sample"
                   }
+                },
+                "type": {
+                  "description": "The HTTP status code applicable as a description string.",
+                  "type": "string"
+                },
+                "code": {
+                  "description": "The HTTP status code applicable as a description string.",
+                  "type": "string"
+                },
+                "status": {
+                  "description": "The HTTP status code applicable.",
+                  "type": "integer"
+                },
+                "title": {
+                  "description": "A short, human-readable summary that SHOULD NOT change from occurrence to occurrence, except for purposes of localization.",
+                  "type": "string"
                 },
                 "errors": {
                   "type": "array",
@@ -218,8 +274,12 @@
             "description": "A short, human-readable summary of the problem that SHOULD NOT change from occurrence to occurrence of the problem, except for purposes of localization.",
             "type": "string"
           },
-          "detail": {
+          "message": {
             "description": "a human-readable explanation specific to this occurrence of the problem. Like `title`, this field’s value can be localized.",
+            "type": "string"
+          },
+          "location": {
+            "description": "where this occured, example the path of the route responding or function",
             "type": "string"
           },
           "source": {
