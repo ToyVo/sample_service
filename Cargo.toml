@@ -67,6 +67,7 @@ ui = {path = "packages/ui"} # workspace
 url = "2"
 uuid = "1"
 webauthn-rs = {features = ["danger-allow-state-serialisation"], version = "0.5"}
+xitdb = "0.2"
 
 [workspace.lints.clippy]
 arithmetic_side_effects = "deny"

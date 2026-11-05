@@ -28,8 +28,10 @@ tracing-subscriber = {features = ["env-filter"], optional = true, workspace = tr
 url = {optional = true, workspace = true}
 uuid = {features = ["v7"], optional = true, workspace = true}
 webauthn-rs = {optional = true, workspace = true}
+xitdb = {optional = true, workspace = true}
 
 [features]
+xitdb-backend = ["dep:xitdb", "server"]
 server = [
   "dep:argon2",
   "dep:async-trait",
@@ -97,3 +99,8 @@ required-features = ["server"]
 [[test]]
 name = "pagination"
 required-features = ["server"]
+
+[[test]]
+name = "xitdb_backend"
+required-features = ["xitdb-backend"]
+

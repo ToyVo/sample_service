@@ -281,6 +281,7 @@ dependencies = [
  "url",
  "uuid",
  "webauthn-rs",
+ "xitdb",
 ]
 
 [[package]]
@@ -11760,6 +11761,12 @@ dependencies = [
  "thiserror 1.0.69",
  "time",
 ]
+
+[[package]]
+name = "xitdb"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a7bcda23bcc1b415353652b52dfd2881ddbb9b34c30c53a9be70208a825ac397"
 
 [[package]]
 name = "xkeysym"
