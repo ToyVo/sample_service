@@ -1,5 +1,7 @@
 //! This crate contains the shared API: generated types, storage backends,
-//! Axum routers, and observability.
+//! Axum routers, authentication, and observability.
+#[cfg(feature = "server")]
+pub mod auth;
 #[cfg(feature = "server")]
 pub mod generated;
 #[cfg(feature = "server")]

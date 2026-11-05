@@ -8,6 +8,62 @@
 GET {{host}}/api
 
 ###
+# Sign in with a username and password
+POST {{host}}/api/auth/login
+Content-Type: application/json
+{
+    "password": "correct horse battery",
+    "username": "alice"
+}
+
+###
+# Clear the session cookie. Tokens are stateless, so a bearer token stays valid until it expires; clients using one should discard it
+POST {{host}}/api/auth/logout
+
+###
+# The account the bearer token belongs to
+GET {{host}}/api/auth/me
+
+###
+# Verify a passkey assertion and sign in
+POST {{host}}/api/auth/passkeys/login
+Content-Type: application/json
+{
+    "ceremony": "eyJhbGciOiJIUzI1NiJ9…",
+    "credential": {}
+}
+
+###
+# WebAuthn request options for signing in with one of an account's passkeys
+POST {{host}}/api/auth/passkeys/login/options
+Content-Type: application/json
+{
+    "username": "alice"
+}
+
+###
+# Verify a new passkey and store it on the signed-in account
+POST {{host}}/api/auth/passkeys/register
+Content-Type: application/json
+{
+    "ceremony": "eyJhbGciOiJIUzI1NiJ9…",
+    "credential": {}
+}
+
+###
+# WebAuthn creation options for adding a passkey to the signed-in account
+POST {{host}}/api/auth/passkeys/register/options
+
+###
+# Create an account with a username and password, and sign in
+POST {{host}}/api/auth/register
+Content-Type: application/json
+{
+    "password": "correct horse battery",
+    "username": "alice"
+}
+
+###
 # Gets samples method
 GET {{host}}/api/samples?offset=0&limit=100
 

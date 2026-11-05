@@ -4,6 +4,7 @@ dioxus = {workspace = true}
 dioxus-icons = {workspace = true}
 dioxus-primitives = {features = ["router"], workspace = true}
 reqwest = {default-features = false, workspace = true}
+serde = {features = ["derive"], workspace = true}
 serde_json = {workspace = true}
 
 [features]

@@ -1,11 +1,14 @@
 [dependencies]
+argon2 = {features = ["std"], optional = true, workspace = true}
 async-trait = {optional = true, workspace = true}
 axum = {features = ["http1", "json", "query", "tokio", "tracing"], optional = true, workspace = true}
 chrono = {features = ["serde"], optional = true, workspace = true}
 diesel = {features = ["chrono", "postgres", "returning_clauses_for_sqlite_3_35", "sqlite"], optional = true, workspace = true}
 diesel_migrations = {optional = true, workspace = true}
+futures-util = {optional = true, workspace = true}
 http-body-util = {optional = true, workspace = true}
 jsonschema = {default-features = false, optional = true, workspace = true}
+jsonwebtoken = {optional = true, workspace = true}
 mime = {optional = true, workspace = true}
 opentelemetry = {optional = true, workspace = true}
 opentelemetry-appender-tracing = {optional = true, workspace = true}
@@ -24,16 +27,20 @@ tracing-opentelemetry = {optional = true, workspace = true}
 tracing-subscriber = {features = ["env-filter"], optional = true, workspace = true}
 url = {optional = true, workspace = true}
 uuid = {features = ["v7"], optional = true, workspace = true}
+webauthn-rs = {optional = true, workspace = true}
 
 [features]
 server = [
+  "dep:argon2",
   "dep:async-trait",
   "dep:axum",
   "dep:chrono",
   "dep:diesel",
   "dep:diesel_migrations",
+  "dep:futures-util",
   "dep:http-body-util",
   "dep:jsonschema",
+  "dep:jsonwebtoken",
   "dep:mime",
   "dep:opentelemetry",
   "dep:opentelemetry-appender-tracing",
@@ -51,7 +58,8 @@ server = [
   "dep:tracing-opentelemetry",
   "dep:tracing-subscriber",
   "dep:url",
-  "dep:uuid"
+  "dep:uuid",
+  "dep:webauthn-rs"
 ]
 
 [lints]
@@ -64,6 +72,10 @@ version = "0.1.0"
 
 [[test]]
 name = "api_responses"
+required-features = ["server"]
+
+[[test]]
+name = "auth"
 required-features = ["server"]
 
 [[test]]

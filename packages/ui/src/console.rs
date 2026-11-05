@@ -72,7 +72,7 @@ fn build_url(
 /// `fetch` API, so a relative path fails with a builder error and no network
 /// request is ever sent. Event handlers only execute client-side, but this
 /// code must still compile for the server target, hence the split.
-fn absolute_url(path: &str) -> String {
+pub fn absolute_url(path: &str) -> String {
     #[cfg(target_arch = "wasm32")]
     let origin = web_sys::window()
         .and_then(|window| window.location().origin().ok())
@@ -85,7 +85,7 @@ fn absolute_url(path: &str) -> String {
 /// The console issues same-origin requests, so relative URLs resolve against
 /// whatever host serves the app. `reqwest` runs on the browser `fetch` API
 /// client-side; server-side rendering never executes these handlers.
-async fn try_request(
+pub async fn try_request(
     method: String,
     url: String,
     body: Option<String>,

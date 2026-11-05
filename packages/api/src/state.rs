@@ -2,6 +2,7 @@ use std::sync::{Arc, Mutex, MutexGuard};
 
 use diesel::prelude::*;
 
+use crate::auth::AuthState;
 use crate::models::UUID;
 use crate::store::SampleConnection;
 use crate::{Error, ErrorCode};
@@ -56,10 +57,16 @@ pub fn parse_id(sample_id: &str) -> Result<UUID, Error> {
 /// A single `Mutex` connection serializes all queries. That is fine for local
 /// development (`dev.db` / `dev.postgresql/`). For production, replace with a
 /// pooled connection (e.g. `diesel::r2d2`).
+///
+/// `auth` starts as [`AuthState::default`] (`localhost` passkeys, random
+/// token key); the server swaps in the environment's config with
+/// [`AppState::with_auth`].
 #[derive(Clone)]
 pub struct AppState {
     /// Backend-agnostic storage behind a mutex.
     pub db: Arc<Mutex<dyn SampleConnection>>,
+    /// Passkey relying-party config and token signing keys.
+    pub auth: Arc<AuthState>,
 }
 
 impl AppState {
@@ -73,14 +80,29 @@ impl AppState {
     #[must_use]
     pub fn new_sqlite(conn: diesel::sqlite::SqliteConnection) -> Self {
         let db: Arc<Mutex<dyn SampleConnection>> = Arc::new(Mutex::new(conn));
-        Self { db }
+        Self {
+            db,
+            auth: Arc::default(),
+        }
     }
 
     /// Create Postgres state from an already-established connection.
     #[must_use]
     pub fn new_postgres(conn: diesel::pg::PgConnection) -> Self {
         let db: Arc<Mutex<dyn SampleConnection>> = Arc::new(Mutex::new(conn));
-        Self { db }
+        Self {
+            db,
+            auth: Arc::default(),
+        }
+    }
+
+    /// Replace the auth config (e.g. with [`AuthState::from_env`]).
+    #[must_use]
+    pub fn with_auth(self, auth: AuthState) -> Self {
+        Self {
+            auth: Arc::new(auth),
+            ..self
+        }
     }
 
     /// Backend name for logging (`"sqlite"` or `"postgresql"`).

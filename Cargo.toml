@@ -25,6 +25,7 @@ resolver = "2"
 
 [workspace.dependencies]
 anyhow = "1"
+argon2 = "0.5"
 api = {path = "packages/api"} # workspace
 async-trait = "0.1"
 axum = "0.8"
@@ -34,11 +35,13 @@ color-eyre = "0.6"
 criterion = "0.8"
 diesel = "2.2"
 diesel_migrations = "2.3"
+futures-util = "0.3"
 dioxus = "0.7"
 dioxus-icons = "0.1"
 dioxus-primitives = {git = "https://github.com/DioxusLabs/components", version = "0.0.1"}
 http-body-util = "0.1"
 itertools = "0.15"
+jsonwebtoken = {default-features = false, features = ["rust_crypto"], version = "10"}
 jiff = "0.2"
 jsonschema = "0.49"
 mime = "0.3"
@@ -63,6 +66,7 @@ tracing-subscriber = "0.3"
 ui = {path = "packages/ui"} # workspace
 url = "2"
 uuid = "1"
+webauthn-rs = {features = ["danger-allow-state-serialisation"], version = "0.5"}
 
 [workspace.lints.clippy]
 arithmetic_side_effects = "deny"

@@ -19,6 +19,36 @@ plus the `web` / `desktop` / `mobile` shells.
   console and `/docs` reference page are Dioxus routes in the `web` crate
   (`views/console.rs`, `views/docs.rs`), rendered from that same spec.
 - `telemetry` — OpenTelemetry traces, metrics, and logs (see below).
+- `auth` — accounts, passwords, passkeys, and stateless tokens (see below).
+
+## Authentication
+
+The `/api/auth/*` operations are codegen operations in `domain.oas3.json`,
+so request validation (username pattern, password length) happens in the
+generated router before `auth` runs.
+
+- **Passwords** are hashed with argon2id. Unknown usernames still cost a
+  hash, so sign-in timing doesn't reveal which accounts exist.
+- **Sessions are stateless**: sign-in returns an HS256 JWT (24h) in the body
+  *and* sets it as an `HttpOnly; Secure; SameSite=Lax` `__Host-session`
+  cookie. Protected operations accept either `Authorization: Bearer <token>`
+  (API clients) or the cookie (the web UI, which never sees the token).
+  Nothing is stored server-side, so `logout` only clears the cookie; a
+  bearer token stays valid until it expires. Rotating `AUTH_TOKEN_SECRET`
+  revokes every token.
+- **Passkeys** use `webauthn-rs`. Add one while signed in, then sign in with
+  username + passkey. Ceremony state between `options` and `finish` travels
+  in a 5-minute signed token, so any server instance can finish any
+  ceremony. Passkeys are bound to `WEBAUTHN_RP_ID` (default `localhost`) and
+  `WEBAUTHN_ORIGIN` (default `https://localhost:8080`, matching `dx serve`).
+
+Configuration comes from `secretspec.toml`: `AUTH_TOKEN_SECRET` (32+ bytes,
+required; the `development`/`dev` profiles ship an insecure default),
+`WEBAUTHN_RP_ID`, and `WEBAUTHN_ORIGIN`.
+
+Setting the cookie relies on generated response headers (`Set-Cookie` is
+declared on the sign-in responses), which needs an openapi-to-rust build
+with server response-header support.
 
 ## Observability
 

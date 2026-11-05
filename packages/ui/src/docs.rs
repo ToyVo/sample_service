@@ -367,6 +367,14 @@ mod tests {
             rendered,
             vec![
                 "GET /api",
+                "POST /api/auth/login",
+                "POST /api/auth/logout",
+                "GET /api/auth/me",
+                "POST /api/auth/passkeys/login",
+                "POST /api/auth/passkeys/login/options",
+                "POST /api/auth/passkeys/register",
+                "POST /api/auth/passkeys/register/options",
+                "POST /api/auth/register",
                 "GET /api/samples",
                 "POST /api/samples",
                 "DELETE /api/samples/{sampleId}",
@@ -381,7 +389,7 @@ mod tests {
         let endpoints = parse_endpoints(SPEC).expect("spec parses");
         let post = endpoints
             .iter()
-            .find(|endpoint| endpoint.method == "POST")
+            .find(|endpoint| endpoint.method == "POST" && endpoint.path == "/api/samples")
             .expect("post exists");
         assert_eq!(post.description, "Creates a sample");
     }
@@ -434,7 +442,7 @@ mod tests {
         let endpoints = parse_endpoints(SPEC).expect("spec parses");
         let create = endpoints
             .iter()
-            .find(|endpoint| endpoint.method == "POST")
+            .find(|endpoint| endpoint.method == "POST" && endpoint.path == "/api/samples")
             .expect("create exists");
         let body: serde_json::Value =
             serde_json::from_str(create.body_example.as_ref().expect("example body"))

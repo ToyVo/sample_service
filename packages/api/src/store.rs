@@ -16,6 +16,7 @@
 
 use diesel::prelude::*;
 
+use crate::auth::AuthConnection;
 use crate::models::common::{SampleData, UUID};
 use crate::{NewSample, SampleUpdate};
 
@@ -28,8 +29,9 @@ use crate::{NewSample, SampleUpdate};
 ///
 /// The trait is object-safe (no generics, no `Self` in return position),
 /// which lets [`crate::backend::AppState`] hold a single
-/// `Arc<Mutex<dyn SampleConnection>>` instead of an enum.
-pub trait SampleConnection: Send {
+/// `Arc<Mutex<dyn SampleConnection>>` instead of an enum. Account and session
+/// storage comes along via the [`AuthConnection`] supertrait.
+pub trait SampleConnection: AuthConnection + Send {
     /// Backend name for logging (`"sqlite"` or `"postgresql"`).
     fn backend_name(&self) -> &'static str;
 

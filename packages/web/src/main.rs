@@ -6,7 +6,7 @@
 
 use dioxus::prelude::*;
 
-use ui::{ApiExplorer, Navbar, NotFound, THEME_CSS, components::navbar::NavbarItem};
+use ui::{ApiExplorer, Login, Navbar, NotFound, THEME_CSS, components::navbar::NavbarItem};
 
 #[cfg(feature = "server")]
 secretspec_derive::declare_secrets!("../../secretspec.toml");
@@ -20,6 +20,8 @@ enum Route {
     // Alias for old bookmarks: same unified page as `/docs`.
     #[route("/console", ApiExplorerPage)]
     Console {},
+    #[route("/login", LoginPage)]
+    SignIn {},
     // `"/"` needs an explicit route: the `/:..segments` catch-all only
     // matches non-empty paths, so without this `"/"` falls through to
     // the SSR error path (plain-text 404) instead of `NotFound` HTML.
@@ -66,6 +68,12 @@ fn WebNavbar() -> Element {
                 to: Route::Docs {},
                 "API"
             }
+            NavbarItem {
+                index: 1usize,
+                value: "account".to_string(),
+                to: Route::SignIn {},
+                "Account"
+            }
         }
 
         Outlet::<Route> {}
@@ -78,6 +86,14 @@ fn WebNavbar() -> Element {
 fn ApiExplorerPage() -> Element {
     rsx! {
         ApiExplorer {}
+    }
+}
+
+/// Username/password and passkey sign-in (shared `Login`).
+#[component]
+fn LoginPage() -> Element {
+    rsx! {
+        Login {}
     }
 }
 
@@ -113,8 +129,11 @@ fn main() {
                 .map_err(|err| anyhow::anyhow!("secrets failed to load: {err}"))?;
 
             resolved.secrets.set_as_env_vars();
+            let auth = api::auth::AuthState::from_env()
+                .map_err(|err| anyhow::anyhow!("auth configuration invalid: {err}"))?;
             let state = api::establish_connection()
-                .map_err(|err| anyhow::anyhow!("database connection failed: {err}"))?;
+                .map_err(|err| anyhow::anyhow!("database connection failed: {err}"))?
+                .with_auth(auth);
             api::run_pending_migrations(&state)
                 .map_err(|err| anyhow::anyhow!("database migration failed: {err}"))?;
 

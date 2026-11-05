@@ -127,6 +127,272 @@
           "404": { "$ref": "#/components/responses/sample" }
         }
       }
+    },
+    "/api/auth/register": {
+      "post": {
+        "operationId": "register",
+        "description": "Create an account with a username and password, and sign in",
+        "tags": ["codegen"],
+        "requestBody": {
+          "description": "The new account's credentials",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/credentials"
+              },
+              "example": {
+                "username": "alice",
+                "password": "correct horse battery"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "$ref": "#/components/responses/sessionCreated"
+          },
+          "409": {
+            "$ref": "#/components/responses/session"
+          },
+          "500": {
+            "$ref": "#/components/responses/session"
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "operationId": "login",
+        "description": "Sign in with a username and password",
+        "tags": ["codegen"],
+        "requestBody": {
+          "description": "The account's credentials",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/credentials"
+              },
+              "example": {
+                "username": "alice",
+                "password": "correct horse battery"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/sessionCreated"
+          },
+          "401": {
+            "$ref": "#/components/responses/session"
+          },
+          "500": {
+            "$ref": "#/components/responses/session"
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "operationId": "logout",
+        "description": "Clear the session cookie. Tokens are stateless, so a bearer token stays valid until it expires; clients using one should discard it",
+        "tags": ["codegen"],
+        "responses": {
+          "204": {
+            "$ref": "#/components/responses/signedOut"
+          }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "operationId": "getAccount",
+        "description": "The account the bearer token belongs to",
+        "tags": ["codegen"],
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/authorization"
+          },
+          {
+            "$ref": "#/components/parameters/sessionCookie"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/account"
+          },
+          "401": {
+            "$ref": "#/components/responses/account"
+          },
+          "500": {
+            "$ref": "#/components/responses/account"
+          }
+        }
+      }
+    },
+    "/api/auth/passkeys/register/options": {
+      "post": {
+        "operationId": "startPasskeyRegistration",
+        "description": "WebAuthn creation options for adding a passkey to the signed-in account",
+        "tags": ["codegen"],
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/authorization"
+          },
+          {
+            "$ref": "#/components/parameters/sessionCookie"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/passkeyChallenge"
+          },
+          "401": {
+            "$ref": "#/components/responses/passkeyChallenge"
+          },
+          "500": {
+            "$ref": "#/components/responses/passkeyChallenge"
+          }
+        }
+      }
+    },
+    "/api/auth/passkeys/register": {
+      "post": {
+        "operationId": "finishPasskeyRegistration",
+        "description": "Verify a new passkey and store it on the signed-in account",
+        "tags": ["codegen"],
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/authorization"
+          },
+          {
+            "$ref": "#/components/parameters/sessionCookie"
+          }
+        ],
+        "requestBody": {
+          "description": "The ceremony token and the authenticator's attestation",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/passkeyCredential"
+              },
+              "example": {
+                "ceremony": "eyJhbGciOiJIUzI1NiJ9…",
+                "credential": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "$ref": "#/components/responses/account"
+          },
+          "400": {
+            "$ref": "#/components/responses/account"
+          },
+          "401": {
+            "$ref": "#/components/responses/account"
+          },
+          "500": {
+            "$ref": "#/components/responses/account"
+          }
+        }
+      }
+    },
+    "/api/auth/passkeys/login/options": {
+      "post": {
+        "operationId": "startPasskeyLogin",
+        "description": "WebAuthn request options for signing in with one of an account's passkeys",
+        "tags": ["codegen"],
+        "requestBody": {
+          "description": "The account to sign in to",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/passkeyLogin"
+              },
+              "example": {
+                "username": "alice"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/passkeyChallenge"
+          },
+          "400": {
+            "$ref": "#/components/responses/passkeyChallenge"
+          },
+          "500": {
+            "$ref": "#/components/responses/passkeyChallenge"
+          }
+        }
+      }
+    },
+    "/api/auth/passkeys/login": {
+      "post": {
+        "operationId": "finishPasskeyLogin",
+        "description": "Verify a passkey assertion and sign in",
+        "tags": ["codegen"],
+        "requestBody": {
+          "description": "The ceremony token and the authenticator's assertion",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/passkeyCredential"
+              },
+              "example": {
+                "ceremony": "eyJhbGciOiJIUzI1NiJ9…",
+                "credential": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/sessionCreated"
+          },
+          "400": {
+            "$ref": "#/components/responses/session"
+          },
+          "401": {
+            "$ref": "#/components/responses/session"
+          },
+          "500": {
+            "$ref": "#/components/responses/session"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -153,6 +419,27 @@
           "maximum": 1000,
           "default": 100
         }
+      },
+      "sessionCookie": {
+        "name": "__Host-session",
+        "description": "Session token set by a sign-in response; an alternative to the `Authorization` header",
+        "in": "cookie",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "maxLength": 4096
+        }
+      },
+      "authorization": {
+        "name": "Authorization",
+        "description": "`Bearer <token>`, using the token from a sign-in response",
+        "in": "header",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "maxLength": 4096
+        },
+        "example": "Bearer eyJhbGciOiJIUzI1NiJ9…"
       }
     },
     "responses": {
@@ -239,6 +526,179 @@
             }
           }
         }
+      },
+      "account": {
+        "description": "A response that contains the signed-in account",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "description": "A response that contains the signed-in account",
+              "required": ["errors"],
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/account"
+                },
+                "type": {
+                  "description": "The HTTP status code applicable as a description string.",
+                  "type": "string"
+                },
+                "code": {
+                  "description": "The HTTP status code applicable as a description string.",
+                  "type": "string"
+                },
+                "status": {
+                  "description": "The HTTP status code applicable.",
+                  "type": "integer"
+                },
+                "title": {
+                  "description": "A short, human-readable summary that SHOULD NOT change from occurrence to occurrence, except for purposes of localization.",
+                  "type": "string"
+                },
+                "errors": {
+                  "type": "array",
+                  "description": "Any errors produced during method execution",
+                  "items": {
+                    "$ref": "#/components/schemas/error"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "session": {
+        "description": "A response that contains a bearer token and its account",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "description": "A response that contains a bearer token and its account",
+              "required": ["errors"],
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/session"
+                },
+                "type": {
+                  "description": "The HTTP status code applicable as a description string.",
+                  "type": "string"
+                },
+                "code": {
+                  "description": "The HTTP status code applicable as a description string.",
+                  "type": "string"
+                },
+                "status": {
+                  "description": "The HTTP status code applicable.",
+                  "type": "integer"
+                },
+                "title": {
+                  "description": "A short, human-readable summary that SHOULD NOT change from occurrence to occurrence, except for purposes of localization.",
+                  "type": "string"
+                },
+                "errors": {
+                  "type": "array",
+                  "description": "Any errors produced during method execution",
+                  "items": {
+                    "$ref": "#/components/schemas/error"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "sessionCreated": {
+        "description": "A response that contains a bearer token and its account, and sets the session cookie",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "description": "A response that contains a bearer token and its account, and sets the session cookie",
+              "required": ["errors"],
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/session"
+                },
+                "type": {
+                  "description": "The HTTP status code applicable as a description string.",
+                  "type": "string"
+                },
+                "code": {
+                  "description": "The HTTP status code applicable as a description string.",
+                  "type": "string"
+                },
+                "status": {
+                  "description": "The HTTP status code applicable.",
+                  "type": "integer"
+                },
+                "title": {
+                  "description": "A short, human-readable summary that SHOULD NOT change from occurrence to occurrence, except for purposes of localization.",
+                  "type": "string"
+                },
+                "errors": {
+                  "type": "array",
+                  "description": "Any errors produced during method execution",
+                  "items": {
+                    "$ref": "#/components/schemas/error"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "headers": {
+          "Set-Cookie": {
+            "$ref": "#/components/headers/sessionCookie"
+          }
+        }
+      },
+      "signedOut": {
+        "description": "The session cookie was cleared",
+        "headers": {
+          "Set-Cookie": {
+            "$ref": "#/components/headers/sessionCookie"
+          }
+        }
+      },
+      "passkeyChallenge": {
+        "description": "A response that contains WebAuthn options for the browser",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "description": "A response that contains WebAuthn options for the browser",
+              "required": ["errors"],
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/passkeyChallenge"
+                },
+                "type": {
+                  "description": "The HTTP status code applicable as a description string.",
+                  "type": "string"
+                },
+                "code": {
+                  "description": "The HTTP status code applicable as a description string.",
+                  "type": "string"
+                },
+                "status": {
+                  "description": "The HTTP status code applicable.",
+                  "type": "integer"
+                },
+                "title": {
+                  "description": "A short, human-readable summary that SHOULD NOT change from occurrence to occurrence, except for purposes of localization.",
+                  "type": "string"
+                },
+                "errors": {
+                  "type": "array",
+                  "description": "Any errors produced during method execution",
+                  "items": {
+                    "$ref": "#/components/schemas/error"
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     },
     "schemas": {
@@ -248,6 +708,7 @@
         "enum": [
           "BAD_PARAMETER",
           "BAD_REQUEST",
+          "CONFLICT",
           "FORBIDDEN",
           "INTERNAL_SERVER_ERROR",
           "INVALID_RESPONSE",
@@ -416,6 +877,128 @@
             "maxLength": 500
           }
         }
+      },
+      "credentials": {
+        "type": "object",
+        "description": "A username and password",
+        "required": ["username", "password"],
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "3–32 letters, digits, '.', '_' or '-'; case-insensitive",
+            "pattern": "^[A-Za-z0-9._-]{3,32}$"
+          },
+          "password": {
+            "type": "string",
+            "description": "8–256 characters",
+            "minLength": 8,
+            "maxLength": 256
+          }
+        }
+      },
+      "passkeyLogin": {
+        "type": "object",
+        "description": "The account to sign in to with a passkey",
+        "required": ["username"],
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "3–32 letters, digits, '.', '_' or '-'; case-insensitive",
+            "pattern": "^[A-Za-z0-9._-]{3,32}$"
+          }
+        }
+      },
+      "account": {
+        "type": "object",
+        "description": "A user account",
+        "required": ["id", "username", "passkeys"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier of the account"
+          },
+          "username": {
+            "type": "string",
+            "description": "Lowercased username"
+          },
+          "passkeys": {
+            "type": "integer",
+            "description": "Number of registered passkeys"
+          }
+        }
+      },
+      "session": {
+        "type": "object",
+        "description": "A signed, stateless bearer token for an account",
+        "required": ["token", "expiresAt", "account"],
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "Send as `Authorization: Bearer <token>`"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the token stops being accepted"
+          },
+          "account": {
+            "$ref": "#/components/schemas/account"
+          }
+        }
+      },
+      "passkeyChallenge": {
+        "type": "object",
+        "description": "The first half of a passkey ceremony",
+        "required": ["ceremony", "options"],
+        "properties": {
+          "ceremony": {
+            "type": "string",
+            "description": "Signed ceremony state; send it back unchanged with the credential"
+          },
+          "options": {
+            "type": "object",
+            "description": "WebAuthn options for `navigator.credentials.create()` / `.get()`",
+            "additionalProperties": true
+          }
+        }
+      },
+      "passkeyCredential": {
+        "type": "object",
+        "description": "The second half of a passkey ceremony",
+        "required": ["ceremony", "credential"],
+        "properties": {
+          "ceremony": {
+            "type": "string",
+            "description": "The `ceremony` from the matching options response",
+            "maxLength": 16384
+          },
+          "credential": {
+            "type": "object",
+            "description": "The `PublicKeyCredential` from the browser, binary fields base64url-encoded",
+            "additionalProperties": true
+          }
+        }
+      }
+    },
+    "headers": {
+      "sessionCookie": {
+        "description": "`__Host-session=<token>; Path=/; HttpOnly; Secure; SameSite=Lax` with a `Max-Age` matching the token, or `Max-Age=0` to clear it",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
+      "sessionCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "__Host-session"
       }
     }
   }
