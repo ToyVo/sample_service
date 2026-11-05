@@ -13,6 +13,7 @@ use chrono::NaiveDateTime;
 use diesel::prelude::*;
 
 use crate::models::UUID;
+use crate::store::StoreError;
 
 /// A user account. `username` is always stored lowercased.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -73,28 +74,28 @@ impl From<PasskeyRow> for PasskeyData {
 /// Storage primitives for accounts and passkeys.
 ///
 /// Object-safe like [`crate::store::SampleConnection`]; single-row lookups
-/// return [`diesel::result::Error::NotFound`] when no row matches.
+/// return [`StoreError::NotFound`] when no row matches.
 pub trait AuthConnection: Send {
     /// Insert a user.
     ///
     /// # Errors
     ///
     /// Returns a `UniqueViolation` database error when the username is taken.
-    fn insert_user(&mut self, user: UserData) -> QueryResult<()>;
+    fn insert_user(&mut self, user: UserData) -> Result<(), StoreError>;
 
     /// Fetch a user by id.
     ///
     /// # Errors
     ///
-    /// Returns [`diesel::result::Error::NotFound`] when no user matches.
-    fn fetch_user(&mut self, id: UUID) -> QueryResult<UserData>;
+    /// Returns [`StoreError::NotFound`] when no user matches.
+    fn fetch_user(&mut self, id: UUID) -> Result<UserData, StoreError>;
 
     /// Fetch a user by (already lowercased) username.
     ///
     /// # Errors
     ///
-    /// Returns [`diesel::result::Error::NotFound`] when no user matches.
-    fn fetch_user_by_username(&mut self, username: &str) -> QueryResult<UserData>;
+    /// Returns [`StoreError::NotFound`] when no user matches.
+    fn fetch_user_by_username(&mut self, username: &str) -> Result<UserData, StoreError>;
 
     /// Insert a passkey.
     ///
@@ -102,27 +103,27 @@ pub trait AuthConnection: Send {
     ///
     /// Returns a `UniqueViolation` database error when the credential id is
     /// already registered.
-    fn insert_passkey(&mut self, passkey: PasskeyData) -> QueryResult<()>;
+    fn insert_passkey(&mut self, passkey: PasskeyData) -> Result<(), StoreError>;
 
     /// Fetch every passkey for a user, oldest first.
     ///
     /// # Errors
     ///
-    /// Returns [`diesel::result::Error`] when the query fails.
-    fn fetch_passkeys(&mut self, user_id: UUID) -> QueryResult<Vec<PasskeyData>>;
+    /// Returns [`StoreError`] when the query fails.
+    fn fetch_passkeys(&mut self, user_id: UUID) -> Result<Vec<PasskeyData>, StoreError>;
 
     /// Store a passkey's refreshed state (signature counter, backup flags)
     /// after a successful sign-in.
     ///
     /// # Errors
     ///
-    /// Returns [`diesel::result::Error`] when the update fails.
+    /// Returns [`StoreError`] when the update fails.
     fn touch_passkey(
         &mut self,
         id: UUID,
         passkey: String,
         used_at: NaiveDateTime,
-    ) -> QueryResult<()>;
+    ) -> Result<(), StoreError>;
 }
 
 /// Generate an [`AuthConnection`] implementation for one backend's schema
@@ -130,7 +131,7 @@ pub trait AuthConnection: Send {
 macro_rules! impl_auth_connection {
     ($conn:ty, $schema:ident) => {
         impl AuthConnection for $conn {
-            fn insert_user(&mut self, user: UserData) -> QueryResult<()> {
+            fn insert_user(&mut self, user: UserData) -> Result<(), StoreError> {
                 use crate::schemas::$schema::users;
                 diesel::insert_into(users::table)
                     .values((
@@ -141,9 +142,10 @@ macro_rules! impl_auth_connection {
                     ))
                     .execute(self)
                     .map(|_| ())
+                    .map_err(StoreError::from)
             }
 
-            fn fetch_user(&mut self, id: UUID) -> QueryResult<UserData> {
+            fn fetch_user(&mut self, id: UUID) -> Result<UserData, StoreError> {
                 use crate::schemas::$schema::users;
                 users::table
                     .filter(users::id.eq(id))
@@ -155,9 +157,10 @@ macro_rules! impl_auth_connection {
                     ))
                     .first::<UserRow>(self)
                     .map(UserData::from)
+                    .map_err(StoreError::from)
             }
 
-            fn fetch_user_by_username(&mut self, username: &str) -> QueryResult<UserData> {
+            fn fetch_user_by_username(&mut self, username: &str) -> Result<UserData, StoreError> {
                 use crate::schemas::$schema::users;
                 users::table
                     .filter(users::username.eq(username))
@@ -169,9 +172,10 @@ macro_rules! impl_auth_connection {
                     ))
                     .first::<UserRow>(self)
                     .map(UserData::from)
+                    .map_err(StoreError::from)
             }
 
-            fn insert_passkey(&mut self, passkey: PasskeyData) -> QueryResult<()> {
+            fn insert_passkey(&mut self, passkey: PasskeyData) -> Result<(), StoreError> {
                 use crate::schemas::$schema::passkeys;
                 diesel::insert_into(passkeys::table)
                     .values((
@@ -184,9 +188,10 @@ macro_rules! impl_auth_connection {
                     ))
                     .execute(self)
                     .map(|_| ())
+                    .map_err(StoreError::from)
             }
 
-            fn fetch_passkeys(&mut self, user_id: UUID) -> QueryResult<Vec<PasskeyData>> {
+            fn fetch_passkeys(&mut self, user_id: UUID) -> Result<Vec<PasskeyData>, StoreError> {
                 use crate::schemas::$schema::passkeys;
                 let rows: Vec<PasskeyRow> = passkeys::table
                     .filter(passkeys::user_id.eq(user_id))
@@ -208,7 +213,7 @@ macro_rules! impl_auth_connection {
                 id: UUID,
                 passkey: String,
                 used_at: NaiveDateTime,
-            ) -> QueryResult<()> {
+            ) -> Result<(), StoreError> {
                 use crate::schemas::$schema::passkeys;
                 diesel::update(passkeys::table.filter(passkeys::id.eq(id)))
                     .set((
@@ -217,6 +222,7 @@ macro_rules! impl_auth_connection {
                     ))
                     .execute(self)
                     .map(|_| ())
+                    .map_err(StoreError::from)
             }
         }
     };
@@ -229,7 +235,7 @@ impl_auth_connection!(diesel::pg::PgConnection, postgresql);
 #[allow(clippy::expect_used, clippy::panic, clippy::unwrap_used)]
 mod tests {
     use super::*;
-    use diesel::result::{DatabaseErrorKind, Error};
+    use crate::store::StoreError;
     use diesel::sqlite::SqliteConnection;
 
     fn migrated_connection() -> SqliteConnection {
@@ -263,15 +269,15 @@ mod tests {
         );
         assert!(matches!(
             conn.fetch_user(UUID::random()),
-            Err(Error::NotFound)
+            Err(StoreError::NotFound)
         ));
         assert!(matches!(
             conn.fetch_user_by_username("bob"),
-            Err(Error::NotFound)
+            Err(StoreError::NotFound)
         ));
         assert!(matches!(
             conn.insert_user(user("alice")),
-            Err(Error::DatabaseError(DatabaseErrorKind::UniqueViolation, _))
+            Err(StoreError::Conflict(_))
         ));
     }
 

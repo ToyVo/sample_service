@@ -21,7 +21,7 @@ pub mod password;
 pub mod store;
 pub mod token;
 
-use diesel::result::{DatabaseErrorKind, Error as DieselError};
+use crate::store::StoreError;
 use webauthn_rs::Webauthn;
 use webauthn_rs::prelude::{
     Passkey, PasskeyAuthentication, PasskeyRegistration, PublicKeyCredential,
@@ -169,8 +169,8 @@ impl AuthError {
     }
 }
 
-impl From<DieselError> for AuthError {
-    fn from(err: DieselError) -> Self {
+impl From<StoreError> for AuthError {
+    fn from(err: StoreError) -> Self {
         Self::Internal(err.to_string())
     }
 }
@@ -199,9 +199,7 @@ pub async fn register(state: &AppState, body: Credentials) -> AuthResult<Session
     let inserted = lock_db(&state.db).insert_user(user.clone());
     match inserted {
         Ok(()) => session(state, &user),
-        Err(DieselError::DatabaseError(DatabaseErrorKind::UniqueViolation, _)) => {
-            Err(AuthError::UsernameTaken)
-        }
+        Err(StoreError::Conflict(_)) => Err(AuthError::UsernameTaken),
         Err(err) => Err(err.into()),
     }
 }
@@ -215,7 +213,7 @@ pub async fn login(state: &AppState, body: Credentials) -> AuthResult<Session> {
     let found = lock_db(&state.db).fetch_user_by_username(&body.username.to_lowercase());
     let user = match found {
         Ok(user) => Some(user),
-        Err(DieselError::NotFound) => None,
+        Err(StoreError::NotFound) => None,
         Err(err) => return Err(err.into()),
     };
     let verified = blocking(move || {
@@ -315,9 +313,9 @@ pub fn finish_passkey_registration(
     });
     match inserted {
         Ok(()) => to_account(state, &user),
-        Err(DieselError::DatabaseError(DatabaseErrorKind::UniqueViolation, _)) => Err(
-            AuthError::InvalidPasskey("that passkey is already registered".to_owned()),
-        ),
+        Err(StoreError::Conflict(_)) => Err(AuthError::InvalidPasskey(
+            "that passkey is already registered".to_owned(),
+        )),
         Err(err) => Err(err.into()),
     }
 }
@@ -332,7 +330,7 @@ pub fn start_passkey_login(state: &AppState, body: &PasskeyLogin) -> AuthResult<
     let found = lock_db(&state.db).fetch_user_by_username(&body.username.to_lowercase());
     let user = match found {
         Ok(user) => user,
-        Err(DieselError::NotFound) => return Err(AuthError::NoPasskeys),
+        Err(StoreError::NotFound) => return Err(AuthError::NoPasskeys),
         Err(err) => return Err(err.into()),
     };
     let passkeys: Vec<Passkey> = stored_passkeys(state, user.id)?
@@ -388,7 +386,7 @@ pub fn finish_passkey_login(state: &AppState, body: PasskeyCredential) -> AuthRe
     let found = lock_db(&state.db).fetch_user(user_id);
     match found {
         Ok(user) => session(state, &user),
-        Err(DieselError::NotFound) => Err(AuthError::InvalidCredentials),
+        Err(StoreError::NotFound) => Err(AuthError::InvalidCredentials),
         Err(err) => Err(err.into()),
     }
 }
@@ -403,7 +401,7 @@ fn authenticate(state: &AppState, presented: Presented<'_>) -> AuthResult<UserDa
     let found = lock_db(&state.db).fetch_user(user_id);
     match found {
         Ok(user) => Ok(user),
-        Err(DieselError::NotFound) => Err(AuthError::Unauthenticated),
+        Err(StoreError::NotFound) => Err(AuthError::Unauthenticated),
         Err(err) => Err(err.into()),
     }
 }

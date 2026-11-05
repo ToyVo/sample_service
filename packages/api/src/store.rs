@@ -20,6 +20,45 @@ use crate::auth::AuthConnection;
 use crate::models::common::{SampleData, UUID};
 use crate::{NewSample, SampleUpdate};
 
+/// Storage failure shared by every backend.
+///
+/// Diesel backends convert via [`From`]; other backends (e.g. xitdb) map
+/// their own errors onto the same three cases, so callers never match on
+/// backend-specific types.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum StoreError {
+    /// Nothing matched (row, user, key, or cursor target).
+    NotFound,
+    /// Insert would violate uniqueness (username, credential id).
+    Conflict(String),
+    /// Anything else; the detail string preserves the backend's message.
+    Backend(String),
+}
+
+impl std::fmt::Display for StoreError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::NotFound => formatter.write_str("not found"),
+            Self::Conflict(detail) | Self::Backend(detail) => formatter.write_str(detail),
+        }
+    }
+}
+
+impl std::error::Error for StoreError {}
+
+impl From<diesel::result::Error> for StoreError {
+    fn from(err: diesel::result::Error) -> Self {
+        match err {
+            diesel::result::Error::NotFound => Self::NotFound,
+            diesel::result::Error::DatabaseError(
+                diesel::result::DatabaseErrorKind::UniqueViolation,
+                info,
+            ) => Self::Conflict(info.message().to_string()),
+            _ => Self::Backend(err.to_string()),
+        }
+    }
+}
+
 /// Storage primitives every backend connection must provide.
 ///
 /// Methods work on the backend-agnostic [`SampleData`]; each implementation
@@ -46,42 +85,38 @@ pub trait SampleConnection: AuthConnection + Send {
     ///
     /// # Errors
     ///
-    /// Returns [`diesel::result::Error`] when the insert fails.
-    fn insert_sample(&mut self, data: SampleData) -> Result<(), diesel::result::Error>;
+    /// Returns [`StoreError`] when the insert fails.
+    fn insert_sample(&mut self, data: SampleData) -> Result<(), StoreError>;
 
     /// Fetch one row by id.
     ///
     /// # Errors
     ///
-    /// Returns [`diesel::result::Error::NotFound`] when no row matches.
-    fn fetch_sample(&mut self, id: UUID) -> Result<SampleData, diesel::result::Error>;
+    /// Returns [`StoreError::NotFound`] when no row matches.
+    fn fetch_sample(&mut self, id: UUID) -> Result<SampleData, StoreError>;
 
     /// Fetch a page of rows ordered by `created_at` ascending.
     ///
     /// # Errors
     ///
-    /// Returns [`diesel::result::Error`] when the query fails.
-    fn fetch_samples(
-        &mut self,
-        offset: i64,
-        limit: i64,
-    ) -> Result<Vec<SampleData>, diesel::result::Error>;
+    /// Returns [`StoreError`] when the query fails.
+    fn fetch_samples(&mut self, offset: i64, limit: i64) -> Result<Vec<SampleData>, StoreError>;
 
     /// Overwrite the mutable fields of the row with `data.id` and return the
     /// refreshed row. `created_at` is preserved (updates never change it).
     ///
     /// # Errors
     ///
-    /// Returns [`diesel::result::Error`] when the update or refresh fails.
-    fn save_sample(&mut self, data: SampleData) -> Result<SampleData, diesel::result::Error>;
+    /// Returns [`StoreError`] when the update or refresh fails.
+    fn save_sample(&mut self, data: SampleData) -> Result<SampleData, StoreError>;
 
     /// Delete the row with `id`. Callers fetch first when they need
     /// `NotFound` mapping or the deleted row.
     ///
     /// # Errors
     ///
-    /// Returns [`diesel::result::Error`] when the delete fails.
-    fn delete_sample(&mut self, id: UUID) -> Result<(), diesel::result::Error>;
+    /// Returns [`StoreError`] when the delete fails.
+    fn delete_sample(&mut self, id: UUID) -> Result<(), StoreError>;
 }
 
 /// Generate a [`SampleConnection`] implementation from a schema module and
@@ -99,27 +134,29 @@ macro_rules! impl_sample_connection {
             ) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
                 $migrate(self)
             }
-            fn insert_sample(&mut self, data: SampleData) -> Result<(), diesel::result::Error> {
+            fn insert_sample(&mut self, data: SampleData) -> Result<(), StoreError> {
                 let row = <$row>::from(data);
                 diesel::insert_into(crate::schemas::$schema::samples::table)
                     .values(&row)
                     .execute(self)
                     .map(|_| ())
+                    .map_err(StoreError::from)
             }
 
-            fn fetch_sample(&mut self, id: UUID) -> Result<SampleData, diesel::result::Error> {
+            fn fetch_sample(&mut self, id: UUID) -> Result<SampleData, StoreError> {
                 crate::schemas::$schema::samples::table
                     .filter(crate::schemas::$schema::samples::id.eq(id))
                     .select(<$row>::as_select())
                     .first(self)
                     .map(SampleData::from)
+                    .map_err(StoreError::from)
             }
 
             fn fetch_samples(
                 &mut self,
                 offset: i64,
                 limit: i64,
-            ) -> Result<Vec<SampleData>, diesel::result::Error> {
+            ) -> Result<Vec<SampleData>, StoreError> {
                 let rows: Vec<$row> = crate::schemas::$schema::samples::table
                     .order(crate::schemas::$schema::samples::created_at.asc())
                     .offset(offset)
@@ -129,10 +166,7 @@ macro_rules! impl_sample_connection {
                 Ok(rows.into_iter().map(SampleData::from).collect())
             }
 
-            fn save_sample(
-                &mut self,
-                data: SampleData,
-            ) -> Result<SampleData, diesel::result::Error> {
+            fn save_sample(&mut self, data: SampleData) -> Result<SampleData, StoreError> {
                 let id = data.id;
                 let row = <$row>::from(data);
                 diesel::update(
@@ -148,16 +182,17 @@ macro_rules! impl_sample_connection {
                     crate::schemas::$schema::samples::updated_at.eq(row.updated_at),
                 ))
                 .execute(self)?;
-                self.fetch_sample(id)
+                self.fetch_sample(id).map_err(StoreError::from)
             }
 
-            fn delete_sample(&mut self, id: UUID) -> Result<(), diesel::result::Error> {
+            fn delete_sample(&mut self, id: UUID) -> Result<(), StoreError> {
                 diesel::delete(
                     crate::schemas::$schema::samples::table
                         .filter(crate::schemas::$schema::samples::id.eq(id)),
                 )
                 .execute(self)
                 .map(|_| ())
+                .map_err(StoreError::from)
             }
         }
     };
@@ -220,7 +255,7 @@ pub(crate) fn get_sample(
     tracing::Span::current().record("db.system.name", conn.backend_name());
     match conn.fetch_sample(db_id) {
         Ok(data) => Ok(Some(data)),
-        Err(diesel::result::Error::NotFound) => Ok(None),
+        Err(StoreError::NotFound) => Ok(None),
         Err(err) => Err(err.to_string()),
     }
 }
@@ -264,7 +299,7 @@ pub(crate) fn update_sample(
     tracing::Span::current().record("db.system.name", conn.backend_name());
     let existing = match conn.fetch_sample(db_id) {
         Ok(data) => data,
-        Err(diesel::result::Error::NotFound) => return Ok(None),
+        Err(StoreError::NotFound) => return Ok(None),
         Err(err) => return Err(err.to_string()),
     };
 
@@ -292,7 +327,7 @@ pub(crate) fn remove_sample(
     tracing::Span::current().record("db.system.name", conn.backend_name());
     let existing = match conn.fetch_sample(db_id) {
         Ok(data) => data,
-        Err(diesel::result::Error::NotFound) => return Ok(None),
+        Err(StoreError::NotFound) => return Ok(None),
         Err(err) => return Err(err.to_string()),
     };
 
@@ -319,6 +354,36 @@ mod tests {
             .image_uri("https://example.com/img.png".to_string())
             .tags(vec!["one".to_string(), "two".to_string()])
             .build()
+    }
+
+    #[test]
+    fn diesel_not_found_maps_to_store_not_found() {
+        let err = StoreError::from(diesel::result::Error::NotFound);
+        assert!(matches!(err, StoreError::NotFound));
+    }
+
+    #[test]
+    fn diesel_unique_violation_maps_to_conflict() {
+        use crate::auth::{AuthConnection, UserData};
+        let mut conn = migrated_connection();
+        let user = UserData {
+            id: UUID::random(),
+            username: "taken".to_string(),
+            password_hash: "hash".to_string(),
+            created_at: chrono::Utc::now().naive_utc(),
+        };
+        conn.insert_user(user.clone()).expect("first insert");
+        let err = StoreError::from(conn.insert_user(user).expect_err("duplicate must fail"));
+        assert!(matches!(err, StoreError::Conflict(_)));
+    }
+
+    #[test]
+    fn diesel_database_error_maps_to_backend() {
+        let mut conn = migrated_connection();
+        let err = diesel::sql_query("SELECT * FROM missing_table")
+            .execute(&mut conn)
+            .expect_err("missing table must fail");
+        assert!(matches!(StoreError::from(err), StoreError::Backend(_)));
     }
 
     #[test]
