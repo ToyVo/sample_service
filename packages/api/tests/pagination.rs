@@ -36,7 +36,7 @@ async fn list(
 
 #[tokio::test]
 async fn limit_slices_from_the_start_in_order() {
-    crate::on_both_backends!("page_slice", |state| {
+    crate::on_all_backends!("page_slice", |state| {
         let backend = state.backend_name();
         let ids = seed(state, "slice", 5).await;
         let rows = list(state, None, Some(2), backend).await;
@@ -48,7 +48,7 @@ async fn limit_slices_from_the_start_in_order() {
 
 #[tokio::test]
 async fn offset_skips_rows() {
-    crate::on_both_backends!("page_offset", |state| {
+    crate::on_all_backends!("page_offset", |state| {
         let backend = state.backend_name();
         let ids = seed(state, "skip", 5).await;
         let rows = list(state, Some(2), Some(2), backend).await;
@@ -60,7 +60,7 @@ async fn offset_skips_rows() {
 
 #[tokio::test]
 async fn offset_past_the_end_returns_empty_without_errors() {
-    crate::on_both_backends!("page_empty", |state| {
+    crate::on_all_backends!("page_empty", |state| {
         let backend = state.backend_name();
         seed(state, "tail", 3).await;
         let rows = list(state, Some(99), Some(10), backend).await;
@@ -70,7 +70,7 @@ async fn offset_past_the_end_returns_empty_without_errors() {
 
 #[tokio::test]
 async fn negative_offset_clamps_to_zero() {
-    crate::on_both_backends!("page_neg_off", |state| {
+    crate::on_all_backends!("page_neg_off", |state| {
         let backend = state.backend_name();
         seed(state, "neg", 3).await;
         let clamped = list(state, Some(-5), Some(10), backend).await;
@@ -84,7 +84,7 @@ async fn negative_offset_clamps_to_zero() {
 
 #[tokio::test]
 async fn non_positive_limit_clamps_to_one() {
-    crate::on_both_backends!("page_min_lim", |state| {
+    crate::on_all_backends!("page_min_lim", |state| {
         let backend = state.backend_name();
         seed(state, "minlim", 3).await;
         for limit in [0, -10] {
@@ -96,7 +96,7 @@ async fn non_positive_limit_clamps_to_one() {
 
 #[tokio::test]
 async fn huge_limit_returns_everything() {
-    crate::on_both_backends!("page_max_lim", |state| {
+    crate::on_all_backends!("page_max_lim", |state| {
         let backend = state.backend_name();
         seed(state, "big", 4).await;
         let rows = list(state, None, Some(5000), backend).await;
@@ -106,7 +106,7 @@ async fn huge_limit_returns_everything() {
 
 #[tokio::test]
 async fn defaults_return_everything_in_creation_order() {
-    crate::on_both_backends!("page_default", |state| {
+    crate::on_all_backends!("page_default", |state| {
         let backend = state.backend_name();
         let ids = seed(state, "ordered", 6).await;
         let rows = list(state, None, None, backend).await;
@@ -117,7 +117,7 @@ async fn defaults_return_everything_in_creation_order() {
 
 #[tokio::test]
 async fn names_with_varied_statuses_all_list() {
-    crate::on_both_backends!("page_mixed", |state| {
+    crate::on_all_backends!("page_mixed", |state| {
         let backend = state.backend_name();
         for (index, status) in [Status::Active, Status::Inactive, Status::Archived]
             .into_iter()

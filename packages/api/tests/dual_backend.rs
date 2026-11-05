@@ -88,6 +88,25 @@ async fn sqlite_backend_crud() {
     exercise_backend(&state).await;
 }
 
+#[cfg(feature = "xitdb-backend")]
+#[tokio::test]
+async fn xitdb_backend_crud() {
+    let path = std::env::temp_dir().join(format!(
+        "dual-backend-xitdb-{}-{}.db",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("clock readable")
+            .as_nanos()
+    ));
+    let url = format!("xitdb://{}", path.display());
+    let state = api::establish_connection_from_url(&url).expect("xitdb connects");
+    api::run_pending_migrations(&state).expect("xitdb needs no migrations");
+    assert_eq!(state.backend_name(), "xitdb");
+    exercise_backend(&state).await;
+    std::fs::remove_file(&path).expect("cleanup");
+}
+
 #[tokio::test]
 async fn postgres_backend_crud() {
     let url = std::env::var("TEST_POSTGRES_URL")
@@ -121,4 +140,25 @@ fn establish_connection_routes_by_scheme() {
         api::establish_connection_from_url("mysql://localhost/sample").is_err(),
         "unknown scheme should error"
     );
+}
+
+#[cfg(feature = "xitdb-backend")]
+#[test]
+fn establish_connection_routes_xitdb() {
+    let path = std::env::temp_dir().join(format!(
+        "dual-backend-xitdb-routing-{}-{}.db",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("clock readable")
+            .as_nanos()
+    ));
+    for url in [
+        format!("xitdb://{}", path.display()),
+        format!("xitdb:{}", path.display()),
+    ] {
+        let state = api::establish_connection_from_url(&url).expect("xitdb routes");
+        assert_eq!(state.backend_name(), "xitdb");
+    }
+    std::fs::remove_file(&path).expect("cleanup");
 }

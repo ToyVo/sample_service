@@ -44,7 +44,7 @@ async fn create_named(state: &api::AppState, name: &str, backend: &str) -> api::
 
 #[tokio::test]
 async fn create_returns_all_fields() {
-    crate::on_both_backends!("api_create", |state| {
+    crate::on_all_backends!("api_create", |state| {
         let backend = state.backend_name();
         let sample = create_named(state, "full", backend).await;
         assert_eq!(sample.name, "full");
@@ -66,7 +66,7 @@ async fn create_returns_all_fields() {
 
 #[tokio::test]
 async fn create_minimal_leaves_optionals_empty() {
-    crate::on_both_backends!("api_create_min", |state| {
+    crate::on_all_backends!("api_create_min", |state| {
         let backend = state.backend_name();
         let CreateSampleResponse::Created(created) = state
             .create_sample(NewSample::new("minimal".to_string(), Status::Active))
@@ -83,7 +83,7 @@ async fn create_minimal_leaves_optionals_empty() {
 
 #[tokio::test]
 async fn create_accepts_every_status() {
-    crate::on_both_backends!("api_status", |state| {
+    crate::on_all_backends!("api_status", |state| {
         let backend = state.backend_name();
         for status in [Status::Active, Status::Inactive, Status::Archived] {
             let CreateSampleResponse::Created(created) = state
@@ -97,7 +97,7 @@ async fn create_accepts_every_status() {
 
 #[tokio::test]
 async fn create_generates_unique_ids() {
-    crate::on_both_backends!("api_unique", |state| {
+    crate::on_all_backends!("api_unique", |state| {
         let backend = state.backend_name();
         let first = create_named(state, "u1", backend).await;
         let second = create_named(state, "u2", backend).await;
@@ -107,7 +107,7 @@ async fn create_generates_unique_ids() {
 
 #[tokio::test]
 async fn get_rejects_malformed_ids() {
-    crate::on_both_backends!("api_bad_id", |state| {
+    crate::on_all_backends!("api_bad_id", |state| {
         let backend = state.backend_name();
         for bad_id in [
             "",
@@ -130,7 +130,7 @@ async fn get_rejects_malformed_ids() {
 
 #[tokio::test]
 async fn get_missing_uuid_returns_404_payload() {
-    crate::on_both_backends!("api_missing", |state| {
+    crate::on_all_backends!("api_missing", |state| {
         let backend = state.backend_name();
         let missing = uuid::Uuid::now_v7().to_string();
         let GetSampleServerResponse::NotFound(body) = state.get_sample(missing.clone()).await
@@ -144,7 +144,7 @@ async fn get_missing_uuid_returns_404_payload() {
 
 #[tokio::test]
 async fn update_missing_and_malformed_return_404() {
-    crate::on_both_backends!("api_upd_404", |state| {
+    crate::on_all_backends!("api_upd_404", |state| {
         let backend = state.backend_name();
         let missing = uuid::Uuid::now_v7().to_string();
         let UpdateSampleServerResponse::NotFound(body) = state
@@ -181,7 +181,7 @@ async fn update_missing_and_malformed_return_404() {
 
 #[tokio::test]
 async fn remove_missing_and_malformed_return_404() {
-    crate::on_both_backends!("api_del_404", |state| {
+    crate::on_all_backends!("api_del_404", |state| {
         let backend = state.backend_name();
         let missing = uuid::Uuid::now_v7().to_string();
         let RemoveSampleServerResponse::NotFound(body) = state.remove_sample(missing.clone()).await
@@ -202,7 +202,7 @@ async fn remove_missing_and_malformed_return_404() {
 
 #[tokio::test]
 async fn double_remove_second_is_404() {
-    crate::on_both_backends!("api_double_del", |state| {
+    crate::on_all_backends!("api_double_del", |state| {
         let backend = state.backend_name();
         let created = create_named(state, "twice", backend).await;
         let RemoveSampleServerResponse::Ok(first) = state.remove_sample(created.id.clone()).await
@@ -227,7 +227,7 @@ async fn double_remove_second_is_404() {
 
 #[tokio::test]
 async fn remove_returns_the_deleted_row() {
-    crate::on_both_backends!("api_del_row", |state| {
+    crate::on_all_backends!("api_del_row", |state| {
         let backend = state.backend_name();
         let created = create_named(state, "doomed", backend).await;
         let RemoveSampleServerResponse::Ok(removed) = state.remove_sample(created.id.clone()).await
@@ -243,7 +243,7 @@ async fn remove_returns_the_deleted_row() {
 
 #[tokio::test]
 async fn update_empty_body_preserves_row_and_stamps() {
-    crate::on_both_backends!("api_upd_empty", |state| {
+    crate::on_all_backends!("api_upd_empty", |state| {
         let backend = state.backend_name();
         let created = create_named(state, "stable", backend).await;
         let UpdateSampleServerResponse::Ok(updated) = state
@@ -267,7 +267,7 @@ async fn update_empty_body_preserves_row_and_stamps() {
 
 #[tokio::test]
 async fn update_replaces_all_mutable_fields() {
-    crate::on_both_backends!("api_upd_all", |state| {
+    crate::on_all_backends!("api_upd_all", |state| {
         let backend = state.backend_name();
         let created = create_named(state, "mutable", backend).await;
         let UpdateSampleServerResponse::Ok(updated) = state
@@ -314,7 +314,7 @@ async fn update_replaces_all_mutable_fields() {
 
 #[tokio::test]
 async fn updated_at_never_predates_created_at() {
-    crate::on_both_backends!("api_stamps", |state| {
+    crate::on_all_backends!("api_stamps", |state| {
         let backend = state.backend_name();
         let created = create_named(state, "stamped", backend).await;
         assert_eq!(created.updated_at, None, "{backend}: untouched");
@@ -339,7 +339,7 @@ async fn updated_at_never_predates_created_at() {
 
 #[tokio::test]
 async fn error_ids_are_unique_valid_uuids() {
-    crate::on_both_backends!("api_err_ids", |state| {
+    crate::on_all_backends!("api_err_ids", |state| {
         let backend = state.backend_name();
         let first_missing = uuid::Uuid::now_v7().to_string();
         let second_missing = uuid::Uuid::now_v7().to_string();

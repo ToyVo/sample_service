@@ -89,16 +89,70 @@ impl PgGuard {
     }
 }
 
-/// Run `$block` (with `$state: &AppState` bound) against SQLite always and an
-/// isolated Postgres database when a server is reachable. `$db` names the
-/// Postgres test database (`sample_t_<$db>`).
+/// Guard for an isolated xitdb test database file. Always available
+/// (file-backed, no server needed).
+#[cfg(feature = "xitdb-backend")]
+pub struct XitdbGuard {
+    path: std::path::PathBuf,
+    state: AppState,
+}
+
+#[cfg(feature = "xitdb-backend")]
+impl XitdbGuard {
+    /// xitdb state on a fresh temp file, plus edge-triggered migrations
+    /// (a no-op proving the path works end to end).
+    #[must_use]
+    pub fn setup(test: &str) -> Self {
+        let path = std::env::temp_dir().join(format!(
+            "sample_t_{test}-{}-{}.db",
+            std::process::id(),
+            // Unique within a process without shared state.
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .expect("clock readable")
+                .as_nanos()
+        ));
+        let url = format!("xitdb://{}", path.display());
+        let state = api::establish_connection_from_url(&url).expect("xitdb connects");
+        api::run_pending_migrations(&state).expect("xitdb needs no migrations");
+        Self { path, state }
+    }
+
+    /// Borrow the test state.
+    #[must_use]
+    pub fn state(&self) -> &AppState {
+        &self.state
+    }
+
+    /// Remove the test database file. Best-effort: failures are reported,
+    /// not fatal.
+    pub fn cleanup(self) {
+        drop(self.state);
+        if let Err(err) = std::fs::remove_file(&self.path) {
+            eprintln!("test database cleanup failed: {err}");
+        }
+    }
+}
+
+/// Run `$block` (with `$state: &AppState` bound) against SQLite and xitdb
+/// always, plus an isolated Postgres database when a server is reachable.
+/// `$db` names the Postgres test database (`sample_t_<$db>`).
 #[macro_export]
-macro_rules! on_both_backends {
+macro_rules! on_all_backends {
     ($db:literal, |$state:ident| $block:block) => {{
         {
             let __owned = $crate::support::sqlite_state();
             let $state = &__owned;
             $block
+        }
+        #[cfg(feature = "xitdb-backend")]
+        {
+            let __guard = $crate::support::XitdbGuard::setup($db);
+            {
+                let $state = __guard.state();
+                $block
+            }
+            __guard.cleanup();
         }
         if let Some(guard) = $crate::support::PgGuard::setup($db) {
             {

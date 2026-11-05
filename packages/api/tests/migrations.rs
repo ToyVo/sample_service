@@ -41,7 +41,7 @@ async fn unmigrated_database_degrades_to_internal_errors() {
 }
 
 #[test]
-fn migrations_are_idempotent_on_both_backends() {
+fn migrations_are_idempotent_on_all_backends() {
     api::run_pending_migrations(&support::sqlite_state()).expect("sqlite re-migration");
     if let Some(guard) = support::PgGuard::setup("migrations") {
         let state = guard.state();

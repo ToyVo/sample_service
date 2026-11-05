@@ -276,7 +276,10 @@ impl SampleConnection for XitdbConnection {
     }
 
     fn fetch_samples(&mut self, offset: i64, limit: i64) -> Result<Vec<SampleData>, StoreError> {
-        let entry = self.table("samples")?.ok_or(StoreError::NotFound)?;
+        // No rows written yet reads as empty, like an empty table.
+        let Some(entry) = self.table("samples")? else {
+            return Ok(Vec::new());
+        };
         let samples = HashMap::new(entry)?;
         let index_entry = self
             .table("samples_by_created")?
@@ -446,7 +449,10 @@ impl AuthConnection for XitdbConnection {
     }
 
     fn fetch_passkeys(&mut self, user_id: UUID) -> Result<Vec<PasskeyData>, StoreError> {
-        let entry = self.table("passkey_lists")?.ok_or(StoreError::NotFound)?;
+        // No passkeys yet reads as empty, like zero rows.
+        let Some(entry) = self.table("passkey_lists")? else {
+            return Ok(Vec::new());
+        };
         let Some(list) = HashMap::new(entry)?.get(&user_id.0.to_string())? else {
             return Ok(Vec::new());
         };

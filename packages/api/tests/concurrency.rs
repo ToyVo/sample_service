@@ -41,7 +41,7 @@ async fn concurrent_creates(
 
 #[tokio::test]
 async fn parallel_creates_all_succeed_with_unique_ids() {
-    crate::on_both_backends!("conc_create", |state| {
+    crate::on_all_backends!("conc_create", |state| {
         let backend = state.backend_name();
         let ids = concurrent_creates(state, "conc", 10, backend).await;
         assert_eq!(ids.len(), 10, "{backend}");
@@ -56,7 +56,7 @@ async fn parallel_creates_all_succeed_with_unique_ids() {
 
 #[tokio::test]
 async fn parallel_reads_alongside_writes_stay_clean() {
-    crate::on_both_backends!("conc_mixed", |state| {
+    crate::on_all_backends!("conc_mixed", |state| {
         let backend = state.backend_name();
         let writer = {
             let state = state.clone();

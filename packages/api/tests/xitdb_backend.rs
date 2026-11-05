@@ -44,6 +44,17 @@ fn sample_at(name: &str, micros: i64) -> SampleData {
 }
 
 #[test]
+fn fresh_file_behaves_like_migrated() {
+    let mut db = backend();
+    db.run_migrations().expect("xitdb needs no migrations");
+    assert!(db.fetch_samples(0, 10).expect("empty").is_empty());
+    assert!(matches!(
+        db.fetch_sample(UUID::random()),
+        Err(StoreError::NotFound)
+    ));
+}
+
+#[test]
 fn samples_round_trip_and_miss() {
     let mut db = backend();
     assert_eq!(db.backend_name(), "xitdb");
