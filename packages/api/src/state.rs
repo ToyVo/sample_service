@@ -5,6 +5,8 @@ use diesel::prelude::*;
 use crate::auth::AuthState;
 use crate::models::UUID;
 use crate::store::SampleConnection;
+#[cfg(feature = "xitdb-backend")]
+use crate::xitdb_backend::XitdbConnection;
 use crate::{Error, ErrorCode};
 
 #[must_use]
@@ -86,6 +88,17 @@ impl AppState {
         }
     }
 
+    /// Create xitdb state from an already-opened connection.
+    #[cfg(feature = "xitdb-backend")]
+    #[must_use]
+    pub fn new_xitdb(conn: XitdbConnection) -> Self {
+        let db: Arc<Mutex<dyn SampleConnection>> = Arc::new(Mutex::new(conn));
+        Self {
+            db,
+            auth: Arc::default(),
+        }
+    }
+
     /// Create Postgres state from an already-established connection.
     #[must_use]
     pub fn new_postgres(conn: diesel::pg::PgConnection) -> Self {
@@ -125,13 +138,62 @@ pub fn is_postgres_url(url: &str) -> bool {
 ///
 /// Accepts `sqlite://…`, `sqlite:…`, plain paths (`./dev.db`), and anything
 /// without a `://` scheme. Anything else with a scheme (e.g. `mysql://…`) is
-/// not SQLite.
+/// not SQLite. Bare `*.xitdb` paths belong to `is_xitdb_url`, not SQLite.
+/// Extension matching is case-sensitive, like the scheme prefixes below.
 #[must_use]
 pub fn is_sqlite_url(url: &str) -> bool {
     if url.starts_with("sqlite://") || url.starts_with("sqlite:") {
         return true;
     }
-    !url.contains("://")
+    // Without the feature there is no xitdb backend to honor, so bare
+    // `*.xitdb` paths keep the historical sqlite meaning there.
+    if url.contains("://") || (cfg!(feature = "xitdb-backend") && has_xitdb_extension(url)) {
+        return false;
+    }
+    true
+}
+
+/// Returns `true` for xitdb `DATABASE_URL` values.
+///
+/// Accepts `xitdb://…`, `xitdb:…`, and bare paths ending in `.xitdb`.
+/// Extension matching is case-sensitive, like the scheme prefixes.
+#[must_use]
+#[cfg(feature = "xitdb-backend")]
+pub fn is_xitdb_url(url: &str) -> bool {
+    url.starts_with("xitdb://") || url.starts_with("xitdb:") || has_xitdb_extension(url)
+}
+
+/// Case-sensitive `.xitdb` extension check via [`std::path::Path`].
+fn has_xitdb_extension(url: &str) -> bool {
+    std::path::Path::new(url)
+        .extension()
+        .is_some_and(|ext| ext == "xitdb")
+}
+
+/// Open an xitdb database when the URL selects it, `None` otherwise.
+///
+/// Separate function (instead of an inline branch) so the feature gate has
+/// exactly one site: without `xitdb-backend` this function — and its call —
+/// vanish, and xitdb URLs fall through to the unsupported-scheme error.
+#[cfg(feature = "xitdb-backend")]
+fn establish_xitdb(database_url: &str) -> Option<Result<AppState, diesel::ConnectionError>> {
+    if !is_xitdb_url(database_url) {
+        return None;
+    }
+    Some(
+        XitdbConnection::open(std::path::Path::new(xitdb_path(database_url)))
+            .map(AppState::new_xitdb)
+            .map_err(|err| diesel::ConnectionError::BadConnection(err.to_string())),
+    )
+}
+
+/// Strip the `xitdb://` / `xitdb:` prefix to a filesystem path.
+#[must_use]
+#[cfg(feature = "xitdb-backend")]
+pub fn xitdb_path(url: &str) -> &str {
+    url.strip_prefix("xitdb://")
+        .or_else(|| url.strip_prefix("xitdb:"))
+        .unwrap_or(url)
 }
 
 /// Strip the `sqlite://` / `sqlite:` prefix to a filesystem path.
@@ -146,6 +208,8 @@ pub fn sqlite_path(url: &str) -> &str {
 ///
 /// - `sqlite://./dev.db`, `sqlite:./dev.db`, `./dev.db` → SQLite.
 /// - `postgres://…` / `postgresql://…` → Postgres.
+/// - `xitdb://./dev.xitdb`, `xitdb:./dev.xitdb`, `./dev.xitdb` → xitdb
+///   (`xitdb-backend` feature).
 /// - Unset → `sqlite://./dev.db` (matches `secretspec.toml` development default).
 ///
 /// This is the only place that branches on the backend: the chosen
@@ -175,6 +239,10 @@ pub fn establish_connection() -> Result<AppState, diesel::ConnectionError> {
 pub fn establish_connection_from_url(
     database_url: &str,
 ) -> Result<AppState, diesel::ConnectionError> {
+    #[cfg(feature = "xitdb-backend")]
+    if let Some(result) = establish_xitdb(database_url) {
+        return result;
+    }
     if is_postgres_url(database_url) {
         match diesel::pg::PgConnection::establish(database_url) {
             Ok(conn) => Ok(AppState::new_postgres(conn)),
@@ -221,6 +289,66 @@ pub fn lock_db(
 #[allow(clippy::expect_used, clippy::panic, clippy::unwrap_used)]
 mod tests {
     use super::*;
+
+    #[cfg(feature = "xitdb-backend")]
+    #[test]
+    fn xitdb_url_detection() {
+        assert!(is_xitdb_url("xitdb://./dev.xitdb"));
+        assert!(is_xitdb_url("xitdb:./dev.xitdb"));
+        assert!(is_xitdb_url("./dev.xitdb"));
+        assert!(is_xitdb_url("/abs/path/dev.xitdb"));
+        assert!(!is_xitdb_url("sqlite://./dev.db"));
+        assert!(!is_xitdb_url("./dev.db"));
+        assert!(!is_xitdb_url("postgres://localhost/sample"));
+        assert!(!is_xitdb_url(""));
+    }
+
+    #[cfg(feature = "xitdb-backend")]
+    #[test]
+    fn xitdb_prefix_stripping() {
+        assert_eq!(xitdb_path("xitdb://./dev.xitdb"), "./dev.xitdb");
+        assert_eq!(xitdb_path("xitdb:./dev.xitdb"), "./dev.xitdb");
+        // Plain paths pass through untouched.
+        assert_eq!(xitdb_path("./dev.xitdb"), "./dev.xitdb");
+    }
+
+    #[cfg(feature = "xitdb-backend")]
+    #[test]
+    fn xitdb_routing_opens_file_backend() {
+        let path = std::env::temp_dir().join(format!(
+            "xitdb-routing-test-{}-{}.db",
+            std::process::id(),
+            // Uniqueness within a process without shared state.
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .expect("clock readable")
+                .as_nanos()
+        ));
+        let url = format!("xitdb://{}", path.display());
+        let state = establish_connection_from_url(&url).expect("xitdb opens");
+        assert_eq!(state.backend_name(), "xitdb");
+        std::fs::remove_file(&path).expect("cleanup");
+    }
+
+    #[cfg(feature = "xitdb-backend")]
+    #[test]
+    fn xitdb_routing_rejects_garbage_file() {
+        let path = std::env::temp_dir().join(format!(
+            "xitdb-garbage-test-{}-{}.db",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .expect("clock readable")
+                .as_nanos()
+        ));
+        std::fs::write(&path, b"definitely not a database").expect("fixture written");
+        let url = format!("xitdb://{}", path.display());
+        assert!(
+            establish_connection_from_url(&url).is_err(),
+            "garbage file should error, not panic"
+        );
+        std::fs::remove_file(&path).expect("cleanup");
+    }
 
     #[test]
     fn postgres_url_detection() {

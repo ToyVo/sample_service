@@ -373,7 +373,7 @@ mod tests {
             created_at: chrono::Utc::now().naive_utc(),
         };
         conn.insert_user(user.clone()).expect("first insert");
-        let err = StoreError::from(conn.insert_user(user).expect_err("duplicate must fail"));
+        let err = conn.insert_user(user).expect_err("duplicate must fail");
         assert!(matches!(err, StoreError::Conflict(_)));
     }
 

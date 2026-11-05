@@ -66,7 +66,7 @@ impl XitdbConnection {
                 fsync: true,
             },
         )?;
-        Ok(XitdbConnection { db })
+        Ok(Self { db })
     }
 
     /// Fetch a table cursor, if the table exists yet. Read-only: never
@@ -78,17 +78,6 @@ impl XitdbConnection {
     fn table(&self, name: &str) -> Result<Option<DBCursor<'_>>, StoreError> {
         let root = HashMap::new(self.db.root_cursor()).map_err(StoreError::from)?;
         root.get(name).map_err(StoreError::from)
-    }
-
-    /// Fetch a table map, creating it when missing. Used on write paths.
-    ///
-    /// # Errors
-    ///
-    /// Propagates mapping and I/O failures.
-    fn table_for_write(&self, name: &str) -> Result<Map<'_>, StoreError> {
-        let root = HashMap::new_write(&self.db.root_cursor()).map_err(StoreError::from)?;
-        let cursor = root.put_cursor(name).map_err(StoreError::from)?;
-        HashMap::new_write(&cursor).map_err(StoreError::from)
     }
 }
 
@@ -155,10 +144,10 @@ fn micros_to_time(micros: i64) -> Result<NaiveDateTime, XitdbError> {
 
 /// Write a string field, removing it when `None` (absent key reads as `None`).
 fn put_opt_str(map: &Map<'_>, key: &str, value: Option<&str>) -> Result<(), XitdbError> {
-    match value {
-        Some(text) => map.put(key, Writeable::Bytes(text.as_bytes().to_vec())),
-        None => map.remove(key).map(|_| ()),
-    }
+    value.map_or_else(
+        || map.remove(key).map(|_| ()),
+        |text| map.put(key, Writeable::Bytes(text.as_bytes().to_vec())),
+    )
 }
 
 /// Encode an index key that sorts chronologically: flipping the sign bit
@@ -258,10 +247,12 @@ impl SampleConnection for XitdbConnection {
     }
 
     fn insert_sample(&mut self, data: SampleData) -> Result<(), StoreError> {
-        if let Some(tables) = self.table("samples")? {
-            if HashMap::new(tables)?.get(&data.id.0.to_string())?.is_some() {
-                return Err(StoreError::Conflict("duplicate sample id".to_string()));
-            }
+        let duplicate = match self.table("samples")? {
+            Some(tables) => HashMap::new(tables)?.get(&data.id.0.to_string())?.is_some(),
+            None => false,
+        };
+        if duplicate {
+            return Err(StoreError::Conflict("duplicate sample id".to_string()));
         }
         self.db.run_context(|w| {
             let root = HashMap::new_write(w)?;
@@ -346,10 +337,12 @@ impl SampleConnection for XitdbConnection {
 
 impl AuthConnection for XitdbConnection {
     fn insert_user(&mut self, user: UserData) -> Result<(), StoreError> {
-        if let Some(names) = self.table("usernames")? {
-            if SortedMap::new(names)?.get(&user.username)?.is_some() {
-                return Err(StoreError::Conflict("username taken".to_string()));
-            }
+        let taken = match self.table("usernames")? {
+            Some(names) => SortedMap::new(names)?.get(&user.username)?.is_some(),
+            None => false,
+        };
+        if taken {
+            return Err(StoreError::Conflict("username taken".to_string()));
         }
         self.db.run_context(|w| {
             let root = HashMap::new_write(w)?;
@@ -398,13 +391,14 @@ impl AuthConnection for XitdbConnection {
     }
 
     fn insert_passkey(&mut self, passkey: PasskeyData) -> Result<(), StoreError> {
-        if let Some(index) = self.table("passkeys_by_credential")? {
-            if HashMap::new(index)?
+        let registered = match self.table("passkeys_by_credential")? {
+            Some(index) => HashMap::new(index)?
                 .get_by_bytes(&passkey.credential_id)?
-                .is_some()
-            {
-                return Err(StoreError::Conflict("credential id registered".to_string()));
-            }
+                .is_some(),
+            None => false,
+        };
+        if registered {
+            return Err(StoreError::Conflict("credential id registered".to_string()));
         }
         self.db.run_context(|w| {
             let root = HashMap::new_write(w)?;
@@ -453,9 +447,8 @@ impl AuthConnection for XitdbConnection {
 
     fn fetch_passkeys(&mut self, user_id: UUID) -> Result<Vec<PasskeyData>, StoreError> {
         let entry = self.table("passkey_lists")?.ok_or(StoreError::NotFound)?;
-        let list = match HashMap::new(entry)?.get(&user_id.0.to_string())? {
-            Some(cursor) => cursor,
-            None => return Ok(Vec::new()),
+        let Some(list) = HashMap::new(entry)?.get(&user_id.0.to_string())? else {
+            return Ok(Vec::new());
         };
         let list = LinkedArrayList::new(list)?;
         let keys = self.table("passkeys")?.ok_or(StoreError::NotFound)?;
