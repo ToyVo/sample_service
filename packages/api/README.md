@@ -62,7 +62,7 @@ Run the local stack from the repo root, then serve against it:
 
 ```sh
 cgs run otel up   # collector, Tempo, Prometheus, Grafana
-cgs dev-otel      # dx serve with telemetry on (defaults suffice)
+cgs dev-sqlite    # dx serve with telemetry on (defaults suffice)
 ```
 
 - Grafana (Tempo + Prometheus provisioned): http://localhost:3000

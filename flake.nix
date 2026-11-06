@@ -68,16 +68,21 @@
           };
           openapi-to-rust = pkgs.rustPlatform.buildRustPackage (finalAttrs: {
             pname = "openapi-to-rust";
-            version = "0.16.0";
+            version = "0.23.0";
 
             src = pkgs.fetchFromGitHub {
               owner = "gpu-cli";
               repo = "openapi-to-rust";
               rev = "v${finalAttrs.version}";
-              hash = "sha256-BrnmaTiXO6z+tTofswr6fRvDL9vRWiCb1AMyifHwDhU=";
+              hash = "sha256-tVNgRJ43meSdqOXlGBqvjY0g/7tdxLVsSlESXG/ayeo=";
             };
 
-            cargoHash = "sha256-Scp7PFE3ec69X7F1qi93QBzAR5p9qSjD8/NCeepgb/Q=";
+            # Stock upstream cannot emit server response headers, but the
+            # sign-in responses rely on generated Set-Cookie header structs
+            # (see packages/api/README.md). Re-check upstream on every bump.
+            patches = [ ./nix/openapi-to-rust-response-headers.patch ];
+
+            cargoHash = "sha256-yhX4xn/QTeMHJ7kq65Qmhts8VeZkJBmaONkqp80LJU8=";
 
             nativeBuildInputs = with pkgs; [
               pkg-config

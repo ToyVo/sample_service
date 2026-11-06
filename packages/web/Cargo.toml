@@ -7,6 +7,12 @@ secretspec-derive = {optional = true, workspace = true}
 ui = {workspace = true}
 
 [features]
+# dx auto-enables `server` on server builds, so backend features must NOT
+# include it: dx merges CLI `--features` into the wasm client build too,
+# and `server` (tokio/mio) cannot compile for wasm.
+postgres-backend = ["api/postgres-backend"]
+sqlite-backend = ["api/sqlite-backend"]
+xitdb-backend = ["api/xitdb-backend"]
 default = []
 server = [
   "api/server",

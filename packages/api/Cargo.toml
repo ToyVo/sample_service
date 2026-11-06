@@ -31,7 +31,17 @@ webauthn-rs = {optional = true, workspace = true}
 xitdb = {optional = true, workspace = true}
 
 [features]
-xitdb-backend = ["dep:xitdb", "server"]
+# Storage backends. The concrete backend is chosen at RUNTIME via
+# DATABASE_URL (see state.rs), so these are intentionally dependency-free
+# markers: dx merges CLI `--features` into the wasm client build, where
+# neither the `server` net stack (tokio/mio) nor the storage engines
+# (diesel's postgres/sqlite native bindings, xitdb's OS randomness) can
+# compile. All storage deps therefore stay bundled in `server`, which the
+# wasm build never enables. The `xitdb_backend` module additionally
+# requires `server` (see lib.rs) so it vanishes from client builds.
+postgres-backend = []
+sqlite-backend = []
+xitdb-backend = []
 server = [
   "dep:argon2",
   "dep:async-trait",
@@ -61,7 +71,8 @@ server = [
   "dep:tracing-subscriber",
   "dep:url",
   "dep:uuid",
-  "dep:webauthn-rs"
+  "dep:webauthn-rs",
+  "dep:xitdb"
 ]
 
 [lints]
@@ -102,5 +113,6 @@ required-features = ["server"]
 
 [[test]]
 name = "xitdb_backend"
-required-features = ["xitdb-backend"]
+# The module itself requires server (lib.rs gates it on both features).
+required-features = ["server", "xitdb-backend"]
 

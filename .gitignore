@@ -4,6 +4,7 @@
 a.py
 dev.db
 dev.postgresql/
+dev.xitdb
 dev.observability/
 result
 result-*

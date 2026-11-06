@@ -329,7 +329,7 @@ fn cmd_up(root: &Path) -> Result<(), String> {
     println!("  Prometheus:                   http://localhost:9090");
     println!("  Tempo:                        http://localhost:3200");
     println!("  OTLP HTTP:                    http://localhost:4318 (gRPC :4317)");
-    println!("Point the app at it (default) and run `cgs dev-otel`.");
+    println!("Point the app at it (default) and run `cgs dev-sqlite`.");
     Ok(())
 }
 

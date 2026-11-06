@@ -24,7 +24,7 @@ pub use state::*;
 pub mod store;
 #[cfg(feature = "server")]
 pub mod telemetry;
-#[cfg(feature = "xitdb-backend")]
+#[cfg(all(feature = "xitdb-backend", feature = "server"))]
 pub mod xitdb_backend;
 #[cfg(feature = "server")]
 pub use telemetry::*;

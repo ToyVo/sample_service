@@ -41,10 +41,10 @@ pub mod openapi_to_rust_problem {
 #[derive(Error, Debug)]
 pub enum HttpError {
     /// Network or connection error (from reqwest)
-    #[error("Network error")]
+    #[error("Network error: {0}")]
     Network(#[from] reqwest::Error),
     /// Middleware error (from reqwest-middleware)
-    #[error("Middleware error")]
+    #[error("Middleware error: {0}")]
     Middleware(#[from] reqwest_middleware::Error),
     /// Request serialization error
     #[error("Failed to serialize request: {0}")]
